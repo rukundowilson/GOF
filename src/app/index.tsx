@@ -1,14 +1,15 @@
+import ServiceSelection from '@/components/service-selection';
 import { useState } from 'react';
-import * as ImagePicker from 'expo-image-picker';
 import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const colors = {
-  background: '#F3F6F0',
+  background: '#FFFFFF',
   ink: '#1D2B23',
   muted: '#66736A',
   forest: '#1E4935',
   forestDark: '#173A2B',
+  accent: '#5DAC2C',
   lime: '#D5E7A2',
   line: '#DCE4DA',
 };
@@ -20,22 +21,10 @@ const benefits = [
 ];
 
 export default function HomeScreen() {
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const [error, setError] = useState('');
+  const [showServices, setShowServices] = useState(false);
 
-  async function getStarted() {
-    setError('');
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.9,
-      });
-      if (!result.canceled) setPhotoUri(result.assets[0].uri);
-    } catch {
-      setError('Could not open your photos. Please try again.');
-    }
+  if (showServices) {
+    return <ServiceSelection onBack={() => setShowServices(false)} />;
   }
 
   return (
@@ -66,22 +55,14 @@ export default function HomeScreen() {
             ))}
           </View>
 
-          {photoUri ? (
-            <View style={styles.photoResult}>
-              <Image source={{ uri: photoUri }} style={styles.photo} resizeMode="cover" />
-              <Text style={styles.photoCaption}>Your crop photo is ready for the next step.</Text>
-            </View>
-          ) : null}
-
           <Pressable
             accessibilityRole="button"
-            onPress={getStarted}
+            onPress={() => setShowServices(true)}
             style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}>
-            <Text style={styles.buttonText}>{photoUri ? 'Choose another photo' : 'Get started'}</Text>
+            <Text style={styles.buttonText}>Get started</Text>
             <Text style={styles.buttonArrow}>→</Text>
           </Pressable>
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-          <Text style={styles.footnote}>Start with a photo of your crop.</Text>
+          <Text style={styles.footnote}>Choose the support your field needs.</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -192,7 +173,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
     borderRadius: 10,
-    backgroundColor: colors.forestDark,
+    backgroundColor: colors.accent,
     paddingHorizontal: 18,
   },
   buttonPressed: {
@@ -204,7 +185,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   buttonArrow: {
-    color: colors.lime,
+    color: '#FFFFFF',
     fontSize: 19,
     lineHeight: 22,
   },

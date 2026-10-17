@@ -11,6 +11,7 @@ export default function AppTabs() {
     <NativeTabs
       backgroundColor={colors.background}
       indicatorColor="#5DAC2C"
+      shadowColor="#1D2B23"
       labelStyle={{ selected: { color: '#FFFFFF' } }}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>

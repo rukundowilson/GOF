@@ -1,15 +1,20 @@
-import { useState } from 'react';
-import * as ImagePicker from 'expo-image-picker';
-import { SymbolView } from 'expo-symbols';
+import CropCamera from '@/components/crop-camera';
+import CropPhotoReview from '@/components/crop-photo-review';
 import {
-  ActivityIndicator,
-  Image,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+  loadDiagnosisRecords,
+  saveDiagnosisRecord,
+  type CropDiagnosis,
+  type DiagnosisRecord,
+} from '@/utils/diagnosis-records';
+import { SymbolView } from 'expo-symbols';
+import { useCallback, useEffect, useState } from 'react';
+import {
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -21,7 +26,6 @@ type Service = {
   id: string;
   title: string;
   description: string;
-  status: string;
   ready: boolean;
   icon: { ios: string; android: string; web: string };
   iconColor: string;
@@ -37,7 +41,6 @@ const services = [
     id: 'diagnosis',
     title: 'Crop diagnosis',
     description: 'Check crop problems from a photo.',
-    status: 'Start here',
     ready: true,
     icon: { ios: 'leaf.fill', android: 'agriculture', web: 'agriculture' },
     iconColor: '#26844A',
@@ -47,7 +50,6 @@ const services = [
     id: 'weather',
     title: 'Weather',
     description: 'Local forecasts for field decisions.',
-    status: 'Coming soon',
     ready: false,
     icon: { ios: 'cloud.sun.rain.fill', android: 'partly_cloudy_day', web: 'partly_cloudy_day' },
     iconColor: '#D39A18',
@@ -57,7 +59,6 @@ const services = [
     id: 'agronomists',
     title: 'Agronomists',
     description: 'Connect with nearby crop experts.',
-    status: 'Coming soon',
     ready: false,
     icon: { ios: 'person.2.fill', android: 'support_agent', web: 'support_agent' },
     iconColor: '#277C85',
@@ -67,7 +68,6 @@ const services = [
     id: 'seasonal',
     title: 'Seasonal guidance',
     description: 'Plan the right work for the season.',
-    status: 'Coming soon',
     ready: false,
     icon: { ios: 'calendar', android: 'calendar_month', web: 'calendar_month' },
     iconColor: '#438856',
@@ -79,9 +79,126 @@ export default function ServiceSelection({ onBack }: ServiceSelectionProps) {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [message, setMessage] = useState('');
-  const [openingPicker, setOpeningPicker] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [showPhotoReview, setShowPhotoReview] = useState(false);
+  const [showDiagnosisHome, setShowDiagnosisHome] = useState(false);
+  const [records, setRecords] = useState<DiagnosisRecord[]>([]);
+  const [expandedRecordId, setExpandedRecordId] = useState<string | null>(null);
 
-  async function continueWithService() {
+  useEffect(() => {
+    if (!showDiagnosisHome) return;
+    void loadDiagnosisRecords().then(setRecords);
+  }, [showDiagnosisHome]);
+
+  const handleDiagnosis = useCallback(async (diagnosis: CropDiagnosis) => {
+    try {
+      const record = await saveDiagnosisRecord(diagnosis);
+      setRecords((current) => [record, ...current].slice(0, 50));
+    } catch {
+      // Keep the completed diagnosis visible even if device storage is unavailable.
+    }
+  }, []);
+
+  if (showPhotoReview && photoUri) {
+    return (
+      <CropPhotoReview
+        photoUri={photoUri}
+        onRetake={() => {
+          setShowPhotoReview(false);
+          setShowCamera(true);
+        }}
+        onDone={() => setShowPhotoReview(false)}
+        onDiagnosis={handleDiagnosis}
+      />
+    );
+  }
+
+  if (showDiagnosisHome && !showCamera) {
+    return (
+      <SafeAreaView style={styles.screen}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.content}>
+            <View style={styles.header}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Back to services"
+                onPress={() => setShowDiagnosisHome(false)}
+                style={styles.backButton}>
+                <SymbolView
+                  name={{ ios: 'arrow.left', android: 'arrow_back', web: 'arrow_back' }}
+                  tintColor={ink}
+                  size={20}
+                />
+              </Pressable>
+              <Text style={styles.brand}>GOF<Text style={styles.brandPlus}>+</Text></Text>
+            </View>
+
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                setPhotoUri(null);
+                setShowCamera(true);
+              }}
+              style={({ pressed }) => [styles.continueButton, pressed && styles.buttonPressed]}>
+              <Text style={styles.continueText}>Start new diagnosis</Text>
+              <Text style={styles.arrow}>→</Text>
+            </Pressable>
+
+            <Text style={styles.recordsHeading}>SAVED RECORDS</Text>
+            {records.length ? records.map((record) => {
+              const expanded = expandedRecordId === record.id;
+              return (
+                <Pressable
+                  key={record.id}
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded }}
+                  onPress={() => setExpandedRecordId(expanded ? null : record.id)}
+                  style={({ pressed }) => [styles.recordCard, pressed && styles.cardPressed]}>
+                  <View style={styles.recordHeader}>
+                    <View style={styles.recordText}>
+                      <Text style={styles.recordPlant}>{record.plantName}</Text>
+                      <Text style={styles.recordIssue}>{record.likelyIssue}</Text>
+                    </View>
+                    <Text style={styles.recordDate}>{new Date(record.createdAt).toLocaleDateString()}</Text>
+                  </View>
+                  {expanded ? (
+                    <View style={styles.recordDetails}>
+                      {record.scientificName ? <Text style={styles.scientificName}>{record.scientificName}</Text> : null}
+                      {record.observations.map((item, index) => (
+                        <Text key={`observation-${index}`} style={styles.listItem}>• {item}</Text>
+                      ))}
+                      {record.recommendations.map((item, index) => (
+                        <Text key={`recommendation-${index}`} style={styles.listItem}>• {item}</Text>
+                      ))}
+                    </View>
+                  ) : null}
+                </Pressable>
+              );
+            }) : (
+              <View style={styles.emptyRecords}>
+                <Text style={styles.emptyText}>Your completed diagnoses will appear here.</Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  if (showCamera) {
+    return (
+      <CropCamera
+        onBack={() => setShowCamera(false)}
+        onPhotoSelected={(uri) => {
+          setPhotoUri(uri);
+          setShowCamera(false);
+          setShowPhotoReview(true);
+        }}
+      />
+    );
+  }
+
+  function continueWithService() {
     if (!selectedService) return;
     setMessage('');
 
@@ -89,21 +206,7 @@ export default function ServiceSelection({ onBack }: ServiceSelectionProps) {
       setMessage(`${selectedService.title} is coming soon.`);
       return;
     }
-
-    setOpeningPicker(true);
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.9,
-      });
-      if (!result.canceled) setPhotoUri(result.assets[0].uri);
-    } catch {
-      setMessage('Could not open your photos. Please try again.');
-    } finally {
-      setOpeningPicker(false);
-    }
+    setShowDiagnosisHome(true);
   }
 
   return (
@@ -125,9 +228,7 @@ export default function ServiceSelection({ onBack }: ServiceSelectionProps) {
             <Text style={styles.brand}>GOF<Text style={styles.brandPlus}>+</Text></Text>
           </View>
 
-          <Text style={styles.eyebrow}>YOUR FIELD SERVICES</Text>
-          <Text style={styles.title}>What do you need help with?</Text>
-          <Text style={styles.subtitle}>Choose a service to get started.</Text>
+          <Text style={[styles.title, styles.servicesTitle]}>Your field services</Text>
 
           <View style={styles.grid}>
             {services.map((service) => {
@@ -156,40 +257,24 @@ export default function ServiceSelection({ onBack }: ServiceSelectionProps) {
                   </View>
                   <Text style={styles.cardTitle}>{service.title}</Text>
                   <Text style={styles.cardDescription}>{service.description}</Text>
-                  <Text style={[styles.status, service.ready ? styles.readyStatus : styles.soonStatus]}>
-                    {service.status}
-                  </Text>
                 </Pressable>
               );
             })}
           </View>
 
-          {photoUri ? (
-            <View style={styles.photoResult}>
-              <Image source={{ uri: photoUri }} style={styles.photo} resizeMode="cover" />
-              <Text style={styles.photoMessage}>
-                Photo selected. Crop diagnosis will be the next step we build.
-              </Text>
-            </View>
-          ) : null}
-
           <Pressable
             accessibilityRole="button"
-            disabled={!selectedService || openingPicker}
+            disabled={!selectedService}
             onPress={continueWithService}
             style={({ pressed }) => [
               styles.continueButton,
-              (!selectedService || openingPicker) && styles.disabledButton,
+              !selectedService && styles.disabledButton,
               pressed && styles.buttonPressed,
             ]}>
-            {openingPicker ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.continueText}>
-                {selectedService ? `Continue with ${selectedService.title}` : 'Choose a service'}
-              </Text>
-            )}
-            {!openingPicker ? <Text style={styles.arrow}>→</Text> : null}
+            <Text style={styles.continueText}>
+              {selectedService ? `Continue with ${selectedService.title}` : 'Choose a service'}
+            </Text>
+            <Text style={styles.arrow}>→</Text>
           </Pressable>
           {message ? <Text style={styles.message}>{message}</Text> : null}
         </View>
@@ -249,6 +334,9 @@ const styles = StyleSheet.create({
     fontSize: 27,
     lineHeight: 34,
     fontWeight: '800',
+  },
+  servicesTitle: {
+    marginBottom: 20,
   },
   subtitle: {
     color: muted,
@@ -323,34 +411,6 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     marginTop: 4,
   },
-  status: {
-    fontSize: 10,
-    fontWeight: '700',
-    marginTop: 'auto',
-    paddingTop: 9,
-  },
-  readyStatus: {
-    color: '#32824B',
-  },
-  soonStatus: {
-    color: '#758079',
-  },
-  photoResult: {
-    marginTop: 16,
-  },
-  photo: {
-    width: '100%',
-    height: 180,
-    borderRadius: 12,
-    backgroundColor: '#E8EEE8',
-  },
-  photoMessage: {
-    color: muted,
-    fontSize: 12,
-    lineHeight: 18,
-    textAlign: 'center',
-    marginTop: 7,
-  },
   continueButton: {
     minHeight: 52,
     flexDirection: 'row',
@@ -384,5 +444,75 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     textAlign: 'center',
     marginTop: 9,
+  },
+  recordsHeading: {
+    color: muted,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+    marginTop: 28,
+    marginBottom: 10,
+  },
+  recordCard: {
+    borderWidth: 1,
+    borderColor: '#E3EAE2',
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    padding: 14,
+    marginBottom: 10,
+  },
+  recordHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  recordText: {
+    flex: 1,
+  },
+  recordPlant: {
+    color: ink,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  recordIssue: {
+    color: muted,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 3,
+  },
+  recordDate: {
+    color: muted,
+    fontSize: 10,
+  },
+  recordDetails: {
+    borderTopWidth: 1,
+    borderTopColor: '#E8EEE8',
+    marginTop: 12,
+    paddingTop: 10,
+  },
+  scientificName: {
+    color: muted,
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginBottom: 8,
+  },
+  listItem: {
+    color: ink,
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 6,
+  },
+  emptyRecords: {
+    minHeight: 76,
+    justifyContent: 'center',
+    borderRadius: 12,
+    backgroundColor: '#F5F8F4',
+    padding: 16,
+  },
+  emptyText: {
+    color: muted,
+    fontSize: 13,
+    textAlign: 'center',
   },
 });

@@ -15,9 +15,26 @@ const colors = {
 };
 
 const benefits = [
-  'Understand crop problems from a photo',
-  'Get input guidance shaped by local weather',
-  'Connect with agricultural consultants',
+  {
+    title: 'Diagnose crop emergencies',
+    description: 'Find the cause and prescribe targeted, affordable treatment.',
+  },
+  {
+    title: 'Plan soil and fertilizer',
+    description: 'Use soil tests to choose the right fertilizer.',
+  },
+  {
+    title: 'Choose seeds and planting times',
+    description: 'Choose seeds for local weather and soil.',
+  },
+  {
+    title: 'Modernize farming',
+    description: 'Use drones, GPS, and smart irrigation.',
+  },
+  {
+    title: 'Adapt to climate change',
+    description: 'Change planting times and choose drought-ready crops.',
+  },
 ];
 
 export default function HomeScreen() {
@@ -38,19 +55,18 @@ export default function HomeScreen() {
             accessibilityLabel="GOF logo"
           />
 
-          <Text style={styles.eyebrow}>FIELD SUPPORT, MADE PRACTICAL</Text>
-          <Text style={styles.title}>Welcome to GOF</Text>
-          <Text style={styles.description}>
-            Clearer answers for healthier crops and confident decisions in the field.
-          </Text>
+          <Text style={styles.title}>Your AI Agronomist</Text>
 
           <View style={styles.benefits}>
             {benefits.map((benefit, index) => (
-              <View key={benefit} style={styles.benefitRow}>
+              <View key={benefit.title} style={styles.benefitRow}>
                 <View style={styles.benefitNumber}>
                   <Text style={styles.benefitNumberText}>0{index + 1}</Text>
                 </View>
-                <Text style={styles.benefitText}>{benefit}</Text>
+                <View style={styles.benefitTextWrap}>
+                  <Text style={styles.benefitTitle}>{benefit.title}</Text>
+                  <Text style={styles.benefitDescription}>{benefit.description}</Text>
+                </View>
               </View>
             ))}
           </View>
@@ -62,7 +78,6 @@ export default function HomeScreen() {
             <Text style={styles.buttonText}>Get started</Text>
             <Text style={styles.buttonArrow}>→</Text>
           </Pressable>
-          <Text style={styles.footnote}>Choose the support your field needs.</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -76,9 +91,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
     paddingHorizontal: 24,
-    paddingTop: Platform.select({ web: 80, default: 12 }),
+    paddingTop: Platform.select({ web: 80, default: 40 }),
     paddingBottom: 32,
   },
   content: {
@@ -90,14 +104,7 @@ const styles = StyleSheet.create({
   logo: {
     width: 156,
     height: 106,
-    marginBottom: 26,
-  },
-  eyebrow: {
-    color: colors.forest,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1,
-    textAlign: 'center',
+    marginBottom: 8,
   },
   title: {
     color: colors.ink,
@@ -106,14 +113,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     textAlign: 'center',
     marginTop: 8,
-  },
-  description: {
-    color: colors.muted,
-    maxWidth: 360,
-    fontSize: 16,
-    lineHeight: 24,
-    textAlign: 'center',
-    marginTop: 10,
   },
   benefits: {
     width: '100%',
@@ -125,10 +124,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   benefitRow: {
-    minHeight: 52,
+    minHeight: 68,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 12,
+    paddingVertical: 9,
   },
   benefitNumber: {
     width: 30,
@@ -143,11 +143,20 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
   },
-  benefitText: {
+  benefitTextWrap: {
     flex: 1,
+  },
+  benefitTitle: {
     color: colors.ink,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '800',
+  },
+  benefitDescription: {
+    color: colors.muted,
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 2,
   },
   photoResult: {
     width: '100%',

@@ -1,4 +1,13 @@
+
 # Welcome to your Expo app 👋
+
+## Gemini crop analysis
+
+When a photo is captured or selected, the review screen sends one JPG or PNG image to Google Gemini for crop identification and visible symptom analysis through a server-side Expo API route. Keep the key server-side; never use the `EXPO_PUBLIC_` prefix.
+
+For local development, create or update `.env`, get an API key from [Google AI Studio](https://aistudio.google.com/app/apikey), set `GEMINI_API_KEY` to that key, and restart Expo. The route sends the image inline to `gemini-3.8-flash`, falling back to `gemini-3.6-flash` and then `gemini-3.5-flash-lite` only when the preceding model returns a temporary overload (503). Each model returns structured JSON for the plant identification, likely issue, confidence, visible signs, and suggested next steps.
+
+For production, deploy the Expo API route and configure the Expo Router `origin` to your deployed server URL. Native production builds need this hosted server origin. Keep `GEMINI_API_KEY` in the server environment and add authentication or rate limiting to protect API usage.
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 

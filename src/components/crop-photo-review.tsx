@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { File as ExpoFile } from 'expo-file-system';
+import { SymbolView } from 'expo-symbols';
 import type { CropDiagnosis } from '@/utils/diagnosis-records';
 import Animated, {
   cancelAnimation,
@@ -53,15 +54,6 @@ async function createImageFormData(photoUri: string) {
   const imageFile = new ExpoFile(photoUri);
   form.append('image', imageFile, `crop.${extension}`);
 
-  // React Native's FormData.getParts() exposes ExpoFile as a { uri } object.
-  // Expo's fetch serializer supports Blob/File entries, so expose the appended
-  // file through entries() while retaining the native FormData instance.
-  Object.defineProperty(form, 'entries', {
-    configurable: true,
-    value: function* () {
-      yield ['image', imageFile as unknown as FormDataEntryValue];
-    },
-  });
   return form;
 }
 
@@ -223,6 +215,18 @@ export default function CropPhotoReview({ photoUri, onRetake, onDone, onDiagnosi
             style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}>
             <Text style={styles.secondaryText}>Done for now</Text>
           </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Back to diagnosis"
+            onPress={onDone}
+            style={({ pressed }) => [styles.backLink, pressed && styles.pressed]}>
+            <SymbolView
+              name={{ ios: 'arrow.left', android: 'arrow_back', web: 'arrow_back' }}
+              tintColor={accent}
+              size={17}
+            />
+            <Text style={styles.backLinkText}>Back</Text>
+          </Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -266,6 +270,15 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
   },
+  backLink: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    marginTop: 8,
+  },
+  backLinkText: { color: accent, fontSize: 14, fontWeight: '700' },
   photo: {
     width: '100%',
     height: 340,
@@ -374,13 +387,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   primaryRecommendation: {
-    borderLeftWidth: 4,
-    borderLeftColor: accent,
-    borderRadius: 10,
-    backgroundColor: '#EAF4E5',
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   primaryRecommendationLabel: {
     color: '#34752A',
@@ -389,7 +396,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   primaryRecommendationText: {
-    color: ink,
+    color: '#34752A',
     fontSize: 16,
     lineHeight: 23,
     fontWeight: '700',

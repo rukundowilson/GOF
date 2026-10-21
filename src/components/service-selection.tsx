@@ -1,5 +1,6 @@
 import CropCamera from '@/components/crop-camera';
 import CropPhotoReview from '@/components/crop-photo-review';
+import SeedRecommendation from '@/components/seed-recommendation';
 import {
   loadDiagnosisRecords,
   saveDiagnosisRecord,
@@ -10,6 +11,7 @@ import { SymbolView } from 'expo-symbols';
 import { useCallback, useEffect, useState } from 'react';
 import {
     Platform,
+    Image,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -17,6 +19,7 @@ import {
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { FieldLocation } from '@/utils/field-location';
 
 const accent = '#5DAC2C';
 const ink = '#1D2B23';
@@ -34,6 +37,7 @@ type Service = {
 
 type ServiceSelectionProps = {
   onBack: () => void;
+  location: FieldLocation | null;
 };
 
 const services = [
@@ -47,13 +51,13 @@ const services = [
     iconBackground: '#E8F5EC',
   },
   {
-    id: 'weather',
-    title: 'Weather',
-    description: 'Local forecasts for field decisions.',
-    ready: false,
-    icon: { ios: 'cloud.sun.rain.fill', android: 'partly_cloudy_day', web: 'partly_cloudy_day' },
-    iconColor: '#D39A18',
-    iconBackground: '#FFF5DE',
+    id: 'seed-recommendation',
+    title: 'Seed selection and planning',
+    description: 'Use AI to match seed options to field conditions.',
+    ready: true,
+    icon: { ios: 'leaf.arrow.circlepath', android: 'grass', web: 'grass' },
+    iconColor: '#438856',
+    iconBackground: '#EDF6E9',
   },
   {
     id: 'agronomists',
@@ -64,26 +68,18 @@ const services = [
     iconColor: '#277C85',
     iconBackground: '#E8F5F5',
   },
-  {
-    id: 'seasonal',
-    title: 'Seasonal guidance',
-    description: 'Plan the right work for the season.',
-    ready: false,
-    icon: { ios: 'calendar', android: 'calendar_month', web: 'calendar_month' },
-    iconColor: '#438856',
-    iconBackground: '#EDF6E9',
-  },
 ] as const satisfies Service[];
 
-export default function ServiceSelection({ onBack }: ServiceSelectionProps) {
+export default function ServiceSelection({ onBack, location }: ServiceSelectionProps) {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [showCamera, setShowCamera] = useState(false);
   const [showPhotoReview, setShowPhotoReview] = useState(false);
   const [showDiagnosisHome, setShowDiagnosisHome] = useState(false);
+  const [showSeedRecommendation, setShowSeedRecommendation] = useState(false);
   const [records, setRecords] = useState<DiagnosisRecord[]>([]);
-  const [expandedRecordId, setExpandedRecordId] = useState<string | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<DiagnosisRecord | null>(null);
 
   useEffect(() => {
     if (!showDiagnosisHome) return;
@@ -92,12 +88,13 @@ export default function ServiceSelection({ onBack }: ServiceSelectionProps) {
 
   const handleDiagnosis = useCallback(async (diagnosis: CropDiagnosis) => {
     try {
-      const record = await saveDiagnosisRecord(diagnosis);
+      if (!photoUri) return;
+      const record = await saveDiagnosisRecord(diagnosis, photoUri);
       setRecords((current) => [record, ...current].slice(0, 50));
     } catch {
       // Keep the completed diagnosis visible even if device storage is unavailable.
     }
-  }, []);
+  }, [photoUri]);
 
   if (showPhotoReview && photoUri) {
     return (
@@ -113,24 +110,38 @@ export default function ServiceSelection({ onBack }: ServiceSelectionProps) {
     );
   }
 
+  if (showSeedRecommendation) {
+    return (
+      <SeedRecommendation
+        location={location}
+        onBack={() => setShowSeedRecommendation(false)}
+      />
+    );
+  }
+
+  if (selectedRecord) {
+    return (
+      <SavedDiagnosisDetail
+        record={selectedRecord}
+        location={location}
+        onBack={() => setSelectedRecord(null)}
+      />
+    );
+  }
+
   if (showDiagnosisHome && !showCamera) {
     return (
       <SafeAreaView style={styles.screen}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.content}>
             <View style={styles.header}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Back to services"
-                onPress={() => setShowDiagnosisHome(false)}
-                style={styles.backButton}>
-                <SymbolView
-                  name={{ ios: 'arrow.left', android: 'arrow_back', web: 'arrow_back' }}
-                  tintColor={ink}
-                  size={20}
-                />
-              </Pressable>
-              <Text style={styles.brand}>GOF<Text style={styles.brandPlus}>+</Text></Text>
+              <Image
+                source={require('../../assets/images/logo/gof logo.png')}
+                style={styles.logo}
+                resizeMode="contain"
+                accessibilityLabel="GOF+ logo"
+              />
+              <LocationPill location={location} />
             </View>
 
             <Pressable
@@ -144,37 +155,31 @@ export default function ServiceSelection({ onBack }: ServiceSelectionProps) {
               <Text style={styles.arrow}>→</Text>
             </Pressable>
 
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Back to services"
+              onPress={() => setShowDiagnosisHome(false)}
+              style={({ pressed }) => [styles.backLink, styles.listBackLink, pressed && styles.cardPressed]}>
+              <SymbolView name={{ ios: 'arrow.left', android: 'arrow_back', web: 'arrow_back' }} tintColor={accent} size={17} />
+              <Text style={styles.backLinkText}>Back</Text>
+            </Pressable>
             <Text style={styles.recordsHeading}>SAVED RECORDS</Text>
-            {records.length ? records.map((record) => {
-              const expanded = expandedRecordId === record.id;
-              return (
-                <Pressable
-                  key={record.id}
-                  accessibilityRole="button"
-                  accessibilityState={{ expanded }}
-                  onPress={() => setExpandedRecordId(expanded ? null : record.id)}
-                  style={({ pressed }) => [styles.recordCard, pressed && styles.cardPressed]}>
-                  <View style={styles.recordHeader}>
-                    <View style={styles.recordText}>
-                      <Text style={styles.recordPlant}>{record.plantName}</Text>
-                      <Text style={styles.recordIssue}>{record.likelyIssue}</Text>
-                    </View>
-                    <Text style={styles.recordDate}>{new Date(record.createdAt).toLocaleDateString()}</Text>
-                  </View>
-                  {expanded ? (
-                    <View style={styles.recordDetails}>
-                      {record.scientificName ? <Text style={styles.scientificName}>{record.scientificName}</Text> : null}
-                      {record.observations.map((item, index) => (
-                        <Text key={`observation-${index}`} style={styles.listItem}>• {item}</Text>
-                      ))}
-                      {record.recommendations.map((item, index) => (
-                        <Text key={`recommendation-${index}`} style={styles.listItem}>• {item}</Text>
-                      ))}
-                    </View>
-                  ) : null}
-                </Pressable>
-              );
-            }) : (
+            {records.length ? records.map((record) => (
+              <Pressable
+                key={record.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Open diagnosis for ${record.plantName}`}
+                onPress={() => setSelectedRecord(record)}
+                style={({ pressed }) => [styles.recordCard, styles.recordRow, pressed && styles.cardPressed]}>
+                {record.photoUri ? <Image source={{ uri: record.photoUri }} style={styles.recordThumbnail} resizeMode="cover" /> : <View style={styles.recordThumbnailPlaceholder}><SymbolView name={{ ios: 'leaf', android: 'eco', web: 'eco' }} tintColor={accent} size={22} /></View>}
+                <View style={styles.recordSummary}>
+                  <Text style={styles.recordPlant} numberOfLines={1}>{record.plantName}</Text>
+                  <Text style={styles.recordIssue} numberOfLines={2}>{record.likelyIssue}</Text>
+                  <Text style={styles.recordDate}>{new Date(record.createdAt).toLocaleDateString()}</Text>
+                </View>
+                <SymbolView name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }} tintColor={muted} size={18} />
+              </Pressable>
+            )) : (
               <View style={styles.emptyRecords}>
                 <Text style={styles.emptyText}>Your completed diagnoses will appear here.</Text>
               </View>
@@ -206,6 +211,10 @@ export default function ServiceSelection({ onBack }: ServiceSelectionProps) {
       setMessage(`${selectedService.title} is coming soon.`);
       return;
     }
+    if (selectedService.id === 'seed-recommendation') {
+      setShowSeedRecommendation(true);
+      return;
+    }
     setShowDiagnosisHome(true);
   }
 
@@ -214,21 +223,14 @@ export default function ServiceSelection({ onBack }: ServiceSelectionProps) {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
           <View style={styles.header}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Back to welcome screen"
-              onPress={onBack}
-              style={styles.backButton}>
-              <SymbolView
-                name={{ ios: 'arrow.left', android: 'arrow_back', web: 'arrow_back' }}
-                tintColor={ink}
-                size={20}
-              />
-            </Pressable>
-            <Text style={styles.brand}>GOF<Text style={styles.brandPlus}>+</Text></Text>
+            <Image
+              source={require('../../assets/images/logo/gof logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+              accessibilityLabel="GOF+ logo"
+            />
+            <LocationPill location={location} />
           </View>
-
-          <Text style={[styles.title, styles.servicesTitle]}>Your field services</Text>
 
           <View style={styles.grid}>
             {services.map((service) => {
@@ -277,9 +279,92 @@ export default function ServiceSelection({ onBack }: ServiceSelectionProps) {
             <Text style={styles.arrow}>→</Text>
           </Pressable>
           {message ? <Text style={styles.message}>{message}</Text> : null}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Back to welcome screen"
+            onPress={onBack}
+            style={({ pressed }) => [styles.backLink, pressed && styles.cardPressed]}>
+            <SymbolView
+              name={{ ios: 'arrow.left', android: 'arrow_back', web: 'arrow_back' }}
+              tintColor={accent}
+              size={17}
+            />
+            <Text style={styles.backLinkText}>Back</Text>
+          </Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function SavedDiagnosisDetail({
+  record,
+  location,
+  onBack,
+}: {
+  record: DiagnosisRecord;
+  location: FieldLocation | null;
+  onBack: () => void;
+}) {
+  return (
+    <SafeAreaView style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.content}>
+          <View style={styles.header}>
+            <Image source={require('../../assets/images/logo/gof logo.png')} style={styles.logo} resizeMode="contain" accessibilityLabel="GOF+ logo" />
+            <LocationPill location={location} />
+          </View>
+          <Text style={styles.recordDetailDate}>{new Date(record.createdAt).toLocaleDateString()}</Text>
+          {record.photoUri ? <Image source={{ uri: record.photoUri }} style={styles.recordPhoto} resizeMode="cover" /> : <View style={styles.missingPhoto}><Text style={styles.emptyText}>Photo unavailable for this record</Text></View>}
+          <View style={styles.recordResults}>
+            <Text style={styles.resultsTitle}>Diagnosis and treatment plan</Text>
+            <View style={styles.diagnosisSection}>
+              <Text style={styles.sectionLabel}>CROP</Text>
+              <View style={styles.diagnosisHeading}><Text style={styles.resultName}>{record.plantName}</Text><Text style={styles.score}>{Math.round(record.plantConfidence * 100)}%</Text></View>
+              {record.scientificName ? <Text style={styles.scientificName}>{record.scientificName}</Text> : null}
+            </View>
+            <View style={styles.diagnosisSection}>
+              <Text style={styles.sectionLabel}>LIKELY PROBLEM</Text>
+              <View style={styles.diagnosisHeading}><Text style={styles.resultName}>{record.likelyIssue}</Text><Text style={styles.score}>{Math.round(record.issueConfidence * 100)}%</Text></View>
+            </View>
+            <View style={styles.primaryRecommendation}>
+              <Text style={styles.primaryRecommendationLabel}>MAIN RECOMMENDATION</Text>
+              <Text style={styles.primaryRecommendationText}>{record.recommendations[0] ?? 'No safe treatment advice from this photo. Check the crop in the field before using a product.'}</Text>
+            </View>
+            {record.observations.length ? <View style={styles.diagnosisSection}><Text style={styles.sectionLabel}>WHAT WE CAN SEE</Text>{record.observations.map((item, index) => <Text key={`observation-${index}`} style={styles.listItem}>{'• '}{item}</Text>)}</View> : null}
+            {record.recommendations.length > 1 ? <View style={styles.diagnosisSection}><Text style={styles.sectionLabel}>OTHER ACTIONS</Text>{record.recommendations.slice(1).map((item, index) => <Text key={`recommendation-${index}`} style={styles.listItem}>{'• '}{item}</Text>)}</View> : null}
+            {record.caution ? <Text style={styles.disclaimer}>{record.caution}</Text> : null}
+            <Text style={styles.disclaimer}>For chemicals, check the label for this crop and pest. Follow its dose, safety gear, and harvest waiting time. Ask another agronomist if the problem is unclear or getting worse.</Text>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Back to saved records"
+            onPress={onBack}
+            style={({ pressed }) => [styles.backLink, pressed && styles.cardPressed]}>
+            <SymbolView name={{ ios: 'arrow.left', android: 'arrow_back', web: 'arrow_back' }} tintColor={accent} size={17} />
+            <Text style={styles.backLinkText}>Back</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function LocationPill({ location }: { location: FieldLocation | null }) {
+  return (
+    <View style={styles.locationPill}>
+      <SymbolView
+        name={{ ios: 'location.fill', android: 'location_on', web: 'location_on' }}
+        tintColor="#1672E8"
+        size={15}
+      />
+      <Text style={styles.locationText}>{location?.label ?? 'Location not shared'}</Text>
+      <SymbolView
+        name={{ ios: 'chevron.down', android: 'expand_more', web: 'expand_more' }}
+        tintColor={muted}
+        size={13}
+      />
+    </View>
   );
 }
 
@@ -300,28 +385,48 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   header: {
-    minHeight: 42,
+    minHeight: 64,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 28,
+    marginBottom: 22,
   },
+  brandGroup: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 34,
+    height: 34,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 20,
-    backgroundColor: '#F2F5F0',
+    borderRadius: 17,
+    backgroundColor: accent,
   },
-  brand: {
-    color: ink,
-    fontSize: 19,
-    fontWeight: '900',
+  logo: {
+    width: 105,
+    height: 58,
   },
-  brandPlus: {
-    color: accent,
+  locationPill: {
+    minHeight: 35,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderRadius: 18,
+    backgroundColor: '#F5F8F4',
+    paddingHorizontal: 10,
+    maxWidth: '52%',
   },
+  locationText: { color: muted, fontSize: 11, fontWeight: '600', flexShrink: 1 },
+  backLink: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    marginTop: 8,
+  },
+  listBackLink: {
+    marginTop: 0,
+  },
+  backLinkText: { color: accent, fontSize: 14, fontWeight: '700' },
   eyebrow: {
     color: accent,
     fontSize: 10,
@@ -461,6 +566,29 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 10,
   },
+  recordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 10,
+  },
+  recordThumbnail: {
+    width: 66,
+    height: 66,
+    borderRadius: 9,
+    backgroundColor: '#E8EEE8',
+  },
+  recordThumbnailPlaceholder: {
+    width: 66,
+    height: 66,
+    borderRadius: 9,
+    backgroundColor: '#EDF6E9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recordSummary: {
+    flex: 1,
+  },
   recordHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -484,6 +612,94 @@ const styles = StyleSheet.create({
   recordDate: {
     color: muted,
     fontSize: 10,
+    marginTop: 5,
+  },
+  recordDetailDate: {
+    color: muted,
+    fontSize: 11,
+    textAlign: 'right',
+    marginBottom: 8,
+  },
+  recordPhoto: {
+    width: '100%',
+    height: 220,
+    borderRadius: 10,
+    backgroundColor: '#E8EEE8',
+  },
+  missingPhoto: {
+    minHeight: 90,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    backgroundColor: '#F1F5EF',
+  },
+  recordResults: {
+    marginTop: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: '#F8FAF7',
+  },
+  resultsTitle: {
+    color: ink,
+    fontSize: 20,
+    fontWeight: '800',
+    lineHeight: 26,
+    marginBottom: 14,
+  },
+  diagnosisSection: {
+    borderTopWidth: 1,
+    borderColor: '#E5EAE3',
+    paddingVertical: 12,
+  },
+  sectionLabel: {
+    color: muted,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  diagnosisHeading: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginTop: 5,
+  },
+  resultName: {
+    flex: 1,
+    flexShrink: 1,
+    color: ink,
+    fontSize: 14,
+    lineHeight: 19,
+    fontWeight: '800',
+  },
+  score: {
+    flexShrink: 0,
+    color: accent,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  primaryRecommendation: {
+    marginBottom: 12,
+  },
+  primaryRecommendationLabel: {
+    color: '#34752A',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  primaryRecommendationText: {
+    color: '#34752A',
+    fontSize: 16,
+    lineHeight: 23,
+    fontWeight: '700',
+    marginTop: 7,
+  },
+  disclaimer: {
+    color: muted,
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 12,
   },
   recordDetails: {
     borderTopWidth: 1,

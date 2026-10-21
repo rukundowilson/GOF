@@ -15,6 +15,7 @@ export type CropDiagnosis = {
 export type DiagnosisRecord = CropDiagnosis & {
   id: string;
   createdAt: string;
+  photoUri: string | null;
 };
 
 const webStorageKey = 'gof.crop-diagnosis-records';
@@ -35,11 +36,38 @@ export async function loadDiagnosisRecords(): Promise<DiagnosisRecord[]> {
   }
 }
 
-export async function saveDiagnosisRecord(diagnosis: CropDiagnosis): Promise<DiagnosisRecord> {
+async function persistPhoto(photoUri: string, id: string): Promise<string> {
+  if (Platform.OS === 'web') {
+    if (photoUri.startsWith('data:')) return photoUri;
+    const response = await fetch(photoUri);
+    const blob = await response.blob();
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Could not save diagnosis photo.'));
+      reader.onerror = () => reject(reader.error ?? new Error('Could not save diagnosis photo.'));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  const extension = photoUri.split('?')[0].toLowerCase().endsWith('.png') ? 'png' : 'jpg';
+  const destination = new File(Paths.document, `diagnosis-${id}.${extension}`);
+  await new File(photoUri).copy(destination);
+  return destination.uri;
+}
+
+export async function saveDiagnosisRecord(diagnosis: CropDiagnosis, photoUri: string): Promise<DiagnosisRecord> {
+  const id = `${Date.now()}`;
+  let savedPhotoUri: string | null = null;
+  try {
+    savedPhotoUri = await persistPhoto(photoUri, id);
+  } catch {
+    // Keep the diagnosis even if the temporary photo cannot be copied.
+  }
   const record: DiagnosisRecord = {
     ...diagnosis,
-    id: `${Date.now()}`,
+    id,
     createdAt: new Date().toISOString(),
+    photoUri: savedPhotoUri,
   };
   const records = [record, ...(await loadDiagnosisRecords())].slice(0, 50);
   const serialized = JSON.stringify(records);

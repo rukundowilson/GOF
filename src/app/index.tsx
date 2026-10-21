@@ -1,7 +1,10 @@
 import ServiceSelection from '@/components/service-selection';
+import * as Location from 'expo-location';
+import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
-import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { FieldLocation } from '@/utils/field-location';
 
 const colors = {
   background: '#FFFFFF',
@@ -39,9 +42,76 @@ const benefits = [
 
 export default function HomeScreen() {
   const [showServices, setShowServices] = useState(false);
+  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+  const [requestingLocation, setRequestingLocation] = useState(false);
+  const [locationError, setLocationError] = useState('');
+  const [fieldLocation, setFieldLocation] = useState<FieldLocation | null>(null);
+
+  function handleGetStarted() {
+    if (fieldLocation) {
+      setShowServices(true);
+      return;
+    }
+    setLocationError('');
+    setShowLocationPrompt(true);
+  }
+
+  async function handleUseLocation() {
+    setRequestingLocation(true);
+    setLocationError('');
+    try {
+      const permission = await Location.requestForegroundPermissionsAsync();
+      if (!permission.granted) {
+        setLocationError('Location access was not allowed. You can continue without it.');
+        return;
+      }
+
+      const position = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      let label = 'Current location';
+      if (Platform.OS !== 'web') {
+        try {
+          const places = await Location.reverseGeocodeAsync({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+          const place = places[0];
+          const area = place?.district || place?.city || place?.subregion || place?.region;
+          if (area) label = `${area}, ${place?.isoCountryCode || 'RW'}`;
+        } catch {
+          // The coordinates are still useful if a place name is unavailable.
+        }
+      }
+
+      setFieldLocation({
+        label,
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        altitude: position.coords.altitude,
+      });
+      setShowLocationPrompt(false);
+      setShowServices(true);
+    } catch {
+      setLocationError('Could not get your location. Check location services or continue without it.');
+    } finally {
+      setRequestingLocation(false);
+    }
+  }
+
+  function continueWithoutLocation() {
+    setFieldLocation(null);
+    setShowLocationPrompt(false);
+    setShowServices(true);
+  }
 
   if (showServices) {
-    return <ServiceSelection onBack={() => setShowServices(false)} />;
+    return (
+      <ServiceSelection
+        location={fieldLocation}
+        onBack={() => setShowServices(false)}
+      />
+    );
   }
 
   return (
@@ -73,13 +143,49 @@ export default function HomeScreen() {
 
           <Pressable
             accessibilityRole="button"
-            onPress={() => setShowServices(true)}
+            onPress={handleGetStarted}
             style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}>
             <Text style={styles.buttonText}>Get started</Text>
             <Text style={styles.buttonArrow}>→</Text>
           </Pressable>
         </View>
       </ScrollView>
+      {showLocationPrompt ? (
+        <View style={styles.promptOverlay}>
+          <View accessibilityRole="alert" style={styles.locationPrompt}>
+            <View style={styles.promptIcon}>
+              <SymbolView
+                name={{ ios: 'location.fill', android: 'location_on', web: 'location_on' }}
+                tintColor={colors.accent}
+                size={25}
+              />
+            </View>
+            <Text style={styles.promptTitle}>Use your current location?</Text>
+            <Text style={styles.promptDescription}>
+              Location helps tailor field advice to where you grow. GOF only reads it after you allow access.
+            </Text>
+            {locationError ? <Text style={styles.locationError}>{locationError}</Text> : null}
+            <Pressable
+              accessibilityRole="button"
+              disabled={requestingLocation}
+              onPress={() => void handleUseLocation()}
+              style={({ pressed }) => [styles.allowButton, pressed && styles.buttonPressed]}>
+              {requestingLocation ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.allowButtonText}>Use my location</Text>
+              )}
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              disabled={requestingLocation}
+              onPress={continueWithoutLocation}
+              style={({ pressed }) => [styles.skipButton, pressed && styles.buttonPressed]}>
+              <Text style={styles.skipButtonText}>Continue without location</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -209,4 +315,47 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 14,
   },
+  promptOverlay: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 10,
+    backgroundColor: 'rgba(22, 35, 27, 0.38)',
+    justifyContent: 'center',
+    paddingHorizontal: 22,
+  },
+  locationPrompt: {
+    width: '100%',
+    maxWidth: 420,
+    alignSelf: 'center',
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    padding: 22,
+    shadowColor: '#14251A',
+    shadowOpacity: 0.16,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
+  },
+  promptIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EAF4E6',
+    marginBottom: 14,
+  },
+  promptTitle: { color: colors.ink, fontSize: 20, lineHeight: 27, fontWeight: '800' },
+  promptDescription: { color: colors.muted, fontSize: 13, lineHeight: 19, marginTop: 8 },
+  locationError: { color: '#A33F32', fontSize: 12, lineHeight: 18, marginTop: 10 },
+  allowButton: {
+    minHeight: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    backgroundColor: colors.accent,
+    marginTop: 18,
+  },
+  allowButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  skipButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: 5 },
+  skipButtonText: { color: colors.forest, fontSize: 13, fontWeight: '700' },
 });

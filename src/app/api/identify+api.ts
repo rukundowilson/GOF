@@ -1,3 +1,5 @@
+import { GoogleGenAI, ThinkingLevel } from '@google/genai';
+
 const MAX_IMAGE_SIZE_BYTES = 14 * 1024 * 1024;
 const acceptedImageTypes = new Set(['image/jpeg', 'image/png']);
 const model = 'gemini-3.8-flash';
@@ -36,11 +38,9 @@ function isGeminiDiagnosis(value: unknown): value is GeminiDiagnosis {
   );
 }
 
-function getGeminiErrorMessage(value: unknown) {
-  if (typeof value !== 'object' || value === null || !('error' in value)) return null;
-  const error = value.error;
-  if (typeof error !== 'object' || error === null || !('message' in error)) return null;
-  return typeof error.message === 'string' ? error.message : null;
+function getHttpStatus(error: unknown) {
+  if (typeof error !== 'object' || error === null || !('status' in error)) return null;
+  return typeof error.status === 'number' ? error.status : null;
 }
 
 function arrayBufferToBase64(arrayBuffer: ArrayBuffer) {
@@ -94,102 +94,82 @@ export async function POST(request: Request) {
     'Confidence values must be between 0 and 1.',
   ].join(' ');
 
-  const requestBody = {
-    contents: [
-      {
-        role: 'user',
-        parts: [
-          { text: prompt },
-          { inline_data: { mime_type: submittedImage.type, data: imageBase64 } },
-        ],
+  const generationConfig = {
+    thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+    responseMimeType: 'application/json',
+    responseSchema: {
+      type: 'OBJECT',
+      properties: {
+        plantName: { type: 'STRING' },
+        scientificName: { type: 'STRING' },
+        plantConfidence: { type: 'NUMBER' },
+        likelyIssue: { type: 'STRING' },
+        issueConfidence: { type: 'NUMBER' },
+        observations: { type: 'ARRAY', items: { type: 'STRING' } },
+        recommendations: { type: 'ARRAY', items: { type: 'STRING' } },
+        caution: { type: 'STRING' },
       },
-    ],
-    generationConfig: {
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: 'OBJECT',
-        properties: {
-          plantName: { type: 'STRING' },
-          scientificName: { type: 'STRING' },
-          plantConfidence: { type: 'NUMBER' },
-          likelyIssue: { type: 'STRING' },
-          issueConfidence: { type: 'NUMBER' },
-          observations: { type: 'ARRAY', items: { type: 'STRING' } },
-          recommendations: { type: 'ARRAY', items: { type: 'STRING' } },
-          caution: { type: 'STRING' },
-        },
-        required: [
-          'plantName',
-          'scientificName',
-          'plantConfidence',
-          'likelyIssue',
-          'issueConfidence',
-          'observations',
-          'recommendations',
-          'caution',
-        ],
-      },
-      temperature: 0.2,
-      maxOutputTokens: 1200,
+      required: [
+        'plantName',
+        'scientificName',
+        'plantConfidence',
+        'likelyIssue',
+        'issueConfidence',
+        'observations',
+        'recommendations',
+        'caution',
+      ],
     },
-  };
+    maxOutputTokens: 1200,
+  } as const;
 
   try {
-    const sendRequest = (modelName: string) =>
-      fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
-        },
-        body: JSON.stringify(requestBody),
-      });
+    const ai = new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        timeout: 75_000,
+        retryOptions: { attempts: 3, initialDelay: 1, maxDelay: 5, jitter: 1 },
+        fetch: (input, init) => fetch(input, {
+          ...init,
+          connectTimeout: 75_000,
+        } as RequestInit & { connectTimeout: number }),
+      },
+    });
 
-    let response: Response | undefined;
+    let result: Awaited<ReturnType<typeof ai.models.generateContent>> | undefined;
+    let lastError: unknown;
     for (const modelName of [model, fallbackModel, finalFallbackModel]) {
-      response = await sendRequest(modelName);
-      if (response.status !== 503) break;
+      try {
+        result = await ai.models.generateContent({
+          model: modelName,
+          contents: [{
+            role: 'user',
+            parts: [
+              { text: prompt },
+              { inlineData: { mimeType: submittedImage.type, data: imageBase64 } },
+            ],
+          }],
+          config: generationConfig,
+        });
+        break;
+      } catch (error) {
+        lastError = error;
+        if (getHttpStatus(error) !== 503 || modelName === finalFallbackModel) throw error;
+      }
     }
-    if (!response) return errorResponse('Gemini did not return a response. Please try again.', 502);
-    const payload: unknown = await response.json().catch(() => null);
-
-    if (!response.ok) {
-      if (response.status === 401 || response.status === 403) {
-        return errorResponse('Google rejected the Gemini API key. Check GEMINI_API_KEY and its API access.', 502);
-      }
-      if (response.status === 429) {
-        return errorResponse('Gemini is temporarily rate limited. Please try again shortly.', 429);
-      }
-      if (response.status === 503) {
-        return errorResponse('Gemini is experiencing high demand. Please try again shortly.', 503);
-      }
-      return errorResponse(
-        getGeminiErrorMessage(payload) ?? 'Gemini could not analyze this photo. Please try again.',
-        502,
-      );
+    if (!result) {
+      if (lastError) throw lastError;
+      return errorResponse('Gemini did not return a response. Please try again.', 502);
     }
 
-    const candidates =
-      typeof payload === 'object' && payload !== null && 'candidates' in payload && Array.isArray(payload.candidates)
-        ? payload.candidates
-        : [];
-    const parts =
-      candidates[0] && typeof candidates[0] === 'object' && 'content' in candidates[0] &&
-      typeof candidates[0].content === 'object' && candidates[0].content !== null &&
-      'parts' in candidates[0].content && Array.isArray(candidates[0].content.parts)
-        ? candidates[0].content.parts
-        : [];
-    const textPart = parts.find(
-      (part: unknown): part is { text: string } =>
-        typeof part === 'object' && part !== null && 'text' in part && typeof part.text === 'string',
-    );
-    if (!textPart) {
+    const generatedText = result.text;
+    if (!generatedText) {
       return errorResponse('Gemini did not return an analysis. Try a clearer crop photo.', 502);
     }
 
     let diagnosis: unknown;
     try {
-      diagnosis = JSON.parse(textPart.text);
+      diagnosis = JSON.parse(generatedText);
     } catch {
       return errorResponse('Gemini returned an unreadable analysis. Please try again.', 502);
     }
@@ -198,7 +178,21 @@ export async function POST(request: Request) {
     }
 
     return Response.json(diagnosis);
-  } catch {
-    return errorResponse('Could not reach the Gemini API. Check your connection and try again.', 502);
+  } catch (error) {
+    console.error('[crop-analysis] Gemini request failed', error);
+    const status = getHttpStatus(error);
+    if (status === 401 || status === 403) {
+      return errorResponse('Google rejected the Gemini API key. Check GEMINI_API_KEY and its API access.', 502);
+    }
+    if (status === 429) {
+      return errorResponse('Gemini is temporarily rate limited. Please try again shortly.', 429);
+    }
+    if (status === 503) {
+      return errorResponse('Gemini is experiencing high demand. Please try again shortly.', 503);
+    }
+    return errorResponse(
+      'Could not connect to Gemini after several attempts. Check the server’s internet connection, DNS, or firewall, then try again.',
+      502,
+    );
   }
 }

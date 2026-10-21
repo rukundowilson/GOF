@@ -38,6 +38,12 @@
           "microphonePermission": false,
           "recordAudioAndroid": false
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow GOF to use your location for field advice."
+        }
       ]
     ],
     "experiments": {

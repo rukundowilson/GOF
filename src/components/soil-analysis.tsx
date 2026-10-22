@@ -74,6 +74,22 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
     }
   }
 
+  async function selectMapLocation(latitude: number, longitude: number) {
+    setCoordinates({ latitude, longitude, accuracy: null, altitude: null });
+    setAnalysisMessage('');
+    setLocationLabel('Selected location');
+    try {
+      const addresses = await Location.reverseGeocodeAsync({ latitude, longitude });
+      const place = addresses[0];
+      const parts = [place?.district, place?.city, place?.region]
+        .filter(Boolean)
+        .filter((part, index, all) => all.indexOf(part) === index);
+      if (parts.length) setLocationLabel(parts.join(', '));
+    } catch {
+      // Keep the selected-location label when reverse geocoding is unavailable.
+    }
+  }
+
   async function pickSoilImage() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
@@ -122,7 +138,7 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
           </View>
 
           <View style={styles.actions}>
-            <Pressable onPress={() => void pickSoilImage()} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}>
+            <Pressable accessibilityRole="button" onPress={() => void pickSoilImage()} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}>
               <Text style={styles.actionText}>{soilImage ? 'Change soil image' : 'Upload soil image'}</Text>
             </Pressable>
             {soilImage ? <Image source={{ uri: soilImage }} style={styles.selectedImage} resizeMode="cover" /> : null}
@@ -147,7 +163,7 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
             </View>
           ) : null}
 
-          <Text style={styles.locationHint}>Your current location determines the local weather, altitude, and recommendations.</Text>
+          <Text style={styles.locationHint}>Your current location determines local advice. Tap the map to choose another location.</Text>
           <View style={styles.locationRow}>
             <View style={styles.pinBadge}>
               <SymbolView name={{ ios: 'location.fill', android: 'location_on', web: 'location_on' }} tintColor="#FFFFFF" size={18} />
@@ -158,10 +174,14 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
             </Pressable>
           </View>
 
-          <SoilLocationMap coordinates={coordinates} onLocate={() => void refreshCurrentLocation()} />
+          <SoilLocationMap
+            coordinates={coordinates}
+            onLocate={() => void refreshCurrentLocation()}
+            onSelectLocation={(latitude, longitude) => void selectMapLocation(latitude, longitude)}
+          />
 
-          <Pressable accessibilityRole="button" onPress={runAnalysis} style={({ pressed }) => [styles.runButton, pressed && styles.pressed]}>
-            <Text style={styles.runButtonText}>Run analysis</Text>
+          <Pressable accessibilityRole="button" onPress={runAnalysis} style={({ pressed }) => [styles.actionButton, styles.runButton, pressed && styles.pressed]}>
+            <Text style={styles.actionText}>Run analysis</Text>
           </Pressable>
           {analysisMessage ? <Text style={styles.analysisMessage}>{analysisMessage}</Text> : null}
 
@@ -195,8 +215,8 @@ const styles = StyleSheet.create({
   headerLocation: { maxWidth: '55%', flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 8 },
   headerLocationText: { color: muted, fontSize: 11 },
   actions: { paddingHorizontal: 13 },
-  actionButton: { minHeight: 46, borderRadius: 10, backgroundColor: '#E6E6E6', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 },
-  actionText: { color: '#222722', fontSize: 13, fontWeight: '600' },
+  actionButton: { minHeight: 48, borderRadius: 10, backgroundColor: '#5DAC2C', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 },
+  actionText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
   selectedImage: { width: '100%', height: 150, borderRadius: 10, marginTop: 10 },
   orText: { alignSelf: 'center', color: ink, fontSize: 13, marginVertical: 9 },
   propertiesPanel: { marginHorizontal: 13, marginTop: 10, padding: 13, borderWidth: 1, borderColor: '#E7EBE6', borderRadius: 12, backgroundColor: '#FAFBF9' },
@@ -208,8 +228,7 @@ const styles = StyleSheet.create({
   pinBadge: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#1672E8', alignItems: 'center', justifyContent: 'center' },
   fieldLocation: { maxWidth: '60%', color: muted, fontSize: 12 },
   changeText: { color: '#2767D9', fontSize: 11, marginLeft: 8 },
-  runButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: '#E3E3E3', marginHorizontal: 10, marginTop: 18 },
-  runButtonText: { color: '#202420', fontSize: 13, fontWeight: '600' },
+  runButton: { marginHorizontal: 13, marginTop: 18 },
   analysisMessage: { color: muted, textAlign: 'center', fontSize: 11, lineHeight: 16, marginTop: 8, paddingHorizontal: 12 },
   recentHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 19, marginBottom: 9, paddingHorizontal: 12 },
   recentTitle: { color: ink, fontSize: 13, fontWeight: '600' },

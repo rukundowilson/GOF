@@ -1,0 +1,31 @@
+Province,District,Topographical Nature,Min Altitude (m),Max Altitude (m),Avg Altitude (m)
+Kigali City,Nyarugenge,"Hilly terrain, steep urban slopes, flat valleys along Nyabarongo River",1340,1850,1480
+Kigali City,Gasabo,"Rolling hills, high ridges (Mount Jali, Mount Kigali fringes), wide valleys",1350,2000,1550
+Kigali City,Kicukiro,"Gently undulating hills, relatively flat plateaus, low wetland fringes",1330,1600,1450
+Southern Province,Nyanza,"Central plateau landscape, modest rolling hills, wide agricultural valleys",1400,1750,1600
+Southern Province,Gisagara,"Low rolling plateau hills, extensive valley marshes bordering Burundi",1350,1650,1500
+Southern Province,Huye,Undulating plateau hills rising toward western structural mountains,1450,1900,1650
+Southern Province,Kamonyi,"Gently rolling landscape, dissected by the Nyabarongo river basin",1350,1700,1500
+Southern Province,Ruhango,"Classic central plateau hills, deep technical valleys, moderate slopes",1400,1800,1600
+Southern Province,Muhanga,"Rugged transitional terrain, steep hills bordering the western ridge",1450,2100,1750
+Southern Province,Nyamagabe,"Highly mountainous, very steep slopes, heavily forested (Nyungwe NP)",1600,2700,2100
+Southern Province,Nyaruguru,"High-altitude mountains, steep ridges, high rainfall catchment zones",1550,2600,2000
+Western Province,Karongi,"Extremely rugged, Congo-Nile Crest peaks dropping steeply into Lake Kivu",1460,2600,1900
+Western Province,Rutsiro,"High-altitude spine, very steep slopes, rugged terrain facing Kivu",1460,2600,2100
+Western Province,Rubavu,"Volcanic foothills, lake shorelines, dynamic tectonic topography",1460,2300,1700
+Western Province,Nyabihu,"High alpine volcanic highlands, steep mountain ridges, extreme cold/height",1600,3000,2300
+Western Province,Ngororero,"Very rugged, steep high-altitude hills, prone to landslides, deep V-valleys",1500,2400,1950
+Western Province,Nyamasheke,"Steep slopes bordering Lake Kivu, high altitude ridges, includes Nyungwe",1460,2500,1800
+Western Province,Rusizi,Kivu shores transitioning to low Bugarama plain (lowest in RW) & high ridges,950,2300,1500
+Northern Province,Rulindo,"Steep precipitous hills, mineral-rich high ridges, narrow valleys",1400,2200,1850
+Northern Province,Gakenke,"Highly fragmented relief, high mountains, steep slopes, complex network of valleys",1450,2300,1880
+Northern Province,Musanze,"Volcanic plain surrounded by major Virunga peaks (Karisimbi, Bisoke)",1700,4507,2100
+Northern Province,Burera,"High volcanic mountains, deep volcanic crater lakes (Burera & Ruhondo)",1700,3700,2100
+Northern Province,Gicumbi,"High plateaus with very cold weather, steep technical ranges and ridges",1600,2400,2000
+Eastern Province,Rwamagana,"Low rolling plateau hills, wide marshy valleys, lake zones (Muhazi)",1350,1600,1450
+Eastern Province,Nyagatare,"Large flat plains, gentle low slopes, dry granite low hills",1250,1500,1380
+Eastern Province,Gatsibo,Low mountains transitioning east to flat savannas and Akagera plains,1300,1700,1450
+Eastern Province,Kayonza,"Flattish savannah, lakes, low hills, eastern edge of Akagera National Park",1250,1650,1400
+Eastern Province,Kirehe,"Low plateaus, gentle hills, prominent Rusumo falls river depression",1200,1550,1350
+Eastern Province,Ngoma,"Low undulating hills, many shallow lakes and papyrus valley marshes",1300,1600,1400
+Eastern Province,Bugesera,"Predominantly flat, low dry plateaus, surrounded by complex lake systems",1300,1500,1350

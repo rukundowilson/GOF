@@ -3,7 +3,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { File as ExpoFile } from 'expo-file-system';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, BackHandler, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SoilLocationMap from '@/components/soil-location-map';
 import type { FieldLocation } from '@/utils/field-location';
@@ -36,6 +36,17 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
   useEffect(() => {
     void loadSoilAnalysisRecords().then(setRecords);
   }, []);
+
+  useEffect(() => {
+    if (!analysisResult || Platform.OS === 'web') return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      setAnalysisResult(null);
+      setViewingRecordId(null);
+      setAnalysisMessage('');
+      return true;
+    });
+    return () => subscription.remove();
+  }, [analysisResult]);
 
   useEffect(() => {
     if (fieldLocation?.latitude == null || fieldLocation.longitude == null) return;
@@ -261,12 +272,10 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
                   {analysisResult.cautions.map((caution, index) => <Text key={`${index}-${caution}`} style={styles.cautionText}>{caution}</Text>)}
                 </View>
               ) : null}
-              <Pressable accessibilityRole="button" onPress={closeResult} style={({ pressed }) => [styles.editButton, pressed && styles.pressed]}>
-                <Text style={styles.editButtonText}>{viewingRecordId ? 'Back to recent records' : 'Edit soil inputs'}</Text>
-              </Pressable>
             </View>
           ) : (
           <>
+          <Text style={styles.locationHint}>Add a soil photo or test values for better seed recommendations.</Text>
           <View style={styles.actions}>
             <Pressable accessibilityRole="button" onPress={() => void pickSoilImage()} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}>
               <Text style={styles.actionText}>{soilImage ? 'Change soil image' : 'Upload soil image'}</Text>
@@ -293,7 +302,6 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
             </View>
           ) : null}
 
-          <Text style={styles.locationHint}>Add a soil photo or test values for better seed recommendations.</Text>
           <View style={styles.locationRow}>
             <View style={styles.pinBadge}>
               <SymbolView name={{ ios: 'location.fill', android: 'location_on', web: 'location_on' }} tintColor="#FFFFFF" size={18} />
@@ -344,7 +352,14 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
           </>
           ) : null}
           {onBack ? (
-            <Pressable accessibilityRole="button" accessibilityLabel="Back to seed selection" onPress={onBack} style={({ pressed }) => [styles.backLink, pressed && styles.pressed]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+              onPress={() => {
+                if (analysisResult) closeResult();
+                else onBack();
+              }}
+              style={({ pressed }) => [styles.backLink, pressed && styles.pressed]}>
               <SymbolView name={{ ios: 'arrow.left', android: 'arrow_back', web: 'arrow_back' }} tintColor={green} size={17} />
               <Text style={styles.backLinkText}>Back</Text>
             </Pressable>
@@ -392,8 +407,6 @@ const styles = StyleSheet.create({
   evidence: { color: ink, fontSize: 11, lineHeight: 16, marginTop: 4 },
   cautionBox: { gap: 5, padding: 10, backgroundColor: '#FFF7E8', borderRadius: 8, marginTop: 7 },
   cautionText: { color: '#674A13', fontSize: 11, lineHeight: 16 },
-  editButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: green, borderRadius: 9, marginTop: 14 },
-  editButtonText: { color: green, fontSize: 13, fontWeight: '700' },
   analysisMessage: { color: muted, textAlign: 'center', fontSize: 11, lineHeight: 16, marginTop: 8, paddingHorizontal: 12 },
   recentHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 19, marginBottom: 9, paddingHorizontal: 12 },
   recentTitle: { color: ink, fontSize: 13, fontWeight: '600' },

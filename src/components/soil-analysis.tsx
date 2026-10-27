@@ -27,8 +27,9 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
   const [analyzing, setAnalyzing] = useState(false);
   const [records, setRecords] = useState<SoilAnalysisRecord[]>([]);
   const [showAllRecords, setShowAllRecords] = useState(false);
+  const [showReportDetails, setShowReportDetails] = useState(false);
   const [soilValues, setSoilValues] = useState({ ph: '', nitrogen: '', phosphorus: '', potassium: '', organicMatter: '', texture: '' });
-  const [sampleMetadata, setSampleMetadata] = useState({ labName: '', sampleId: '', sampleDate: '' });
+  const [sampleMetadata, setSampleMetadata] = useState({ labName: '', sampleId: '', sampleDate: '', sampleDepth: '', targetCrop: '', testMethod: '', referenceRanges: '' });
 
   useEffect(() => {
     void loadSoilAnalysisRecords().then(setRecords);
@@ -120,7 +121,7 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
       organicMatter: record.soilValues.organicMatter ?? '',
       texture: record.soilValues.texture ?? '',
     });
-    setSampleMetadata(record.sampleMetadata ?? { labName: '', sampleId: '', sampleDate: '' });
+    setSampleMetadata({ labName: '', sampleId: '', sampleDate: '', sampleDepth: '', targetCrop: '', testMethod: '', referenceRanges: '', ...record.sampleMetadata });
     setLocationLabel(record.locationLabel);
     setCoordinates({ latitude: record.latitude, longitude: record.longitude, accuracy: null, altitude: record.altitude ?? null });
     setAnalysisMessage('');
@@ -136,8 +137,18 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
       setAnalysisMessage('Get your current location first so the recommendations use the right area.');
       return;
     }
-    if (!soilValues.ph.trim() || ![soilValues.nitrogen, soilValues.phosphorus, soilValues.potassium, soilValues.organicMatter].some((value) => value.trim())) {
-      setAnalysisMessage('Enter the lab pH and at least one lab-reported nutrient or organic matter result.');
+    const ph = Number(soilValues.ph);
+    if (!soilValues.ph.trim() || !Number.isFinite(ph) || ph < 0 || ph > 14) {
+      setAnalysisMessage('Enter the pH value from the report (0–14).');
+      return;
+    }
+    const labValues = [soilValues.nitrogen, soilValues.phosphorus, soilValues.potassium, soilValues.organicMatter];
+    if (labValues.some((value) => !/\d/.test(value) || !/[a-zA-Z%/]/.test(value))) {
+      setAnalysisMessage('Enter N, P, K, and organic matter with the units printed on the report (for example, 12 ppm or 2.1%).');
+      return;
+    }
+    if (!soilValues.texture.trim() || !sampleMetadata.sampleDepth?.trim()) {
+      setAnalysisMessage('Add the soil texture and sample depth from the laboratory report.');
       return;
     }
     setAnalyzing(true);
@@ -152,6 +163,10 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
       form.append('potassium', soilValues.potassium);
       form.append('organicMatter', soilValues.organicMatter);
       form.append('texture', soilValues.texture);
+      form.append('sampleDepth', sampleMetadata.sampleDepth ?? '');
+      form.append('targetCrop', sampleMetadata.targetCrop ?? '');
+      form.append('testMethod', sampleMetadata.testMethod ?? '');
+      form.append('referenceRanges', sampleMetadata.referenceRanges ?? '');
       form.append('labName', sampleMetadata.labName);
       form.append('sampleId', sampleMetadata.sampleId);
       form.append('sampleDate', sampleMetadata.sampleDate);
@@ -212,18 +227,16 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
             <View style={styles.results}>
               {analysisMessage ? <Text style={styles.analysisMessage}>{analysisMessage}</Text> : null}
               {soilImage ? <Image source={{ uri: soilImage }} style={styles.resultPhoto} resizeMode="cover" /> : null}
-              <Text style={styles.resultTitle}>{soilImage ? 'Legacy soil photo analysis' : 'Seed planning from laboratory results'}</Text>
+              <Text style={styles.resultTitle}>{soilImage ? 'Legacy soil photo analysis' : 'Pre-Season Analysis'}</Text>
               <View style={styles.resultSummary}>
                 {sampleMetadata.labName ? <Text style={styles.resultBody}>Laboratory: {sampleMetadata.labName}</Text> : null}
                 {sampleMetadata.sampleId ? <Text style={styles.resultBody}>Sample ID: {sampleMetadata.sampleId}</Text> : null}
                 {sampleMetadata.sampleDate ? <Text style={styles.resultBody}>Sample date: {sampleMetadata.sampleDate}</Text> : null}
-                {Object.values(soilValues).some(Boolean) ? (
-                  <Text style={styles.resultBody}>Lab values as reported: {[soilValues.ph && `pH ${soilValues.ph}`, soilValues.nitrogen && `N ${soilValues.nitrogen}`, soilValues.phosphorus && `P ${soilValues.phosphorus}`, soilValues.potassium && `K ${soilValues.potassium}`, soilValues.organicMatter && `Organic matter ${soilValues.organicMatter}`, soilValues.texture && `Texture ${soilValues.texture}`].filter(Boolean).join(' · ')}.</Text>
-                ) : null}
+                {Object.values(soilValues).some(Boolean) ? <Text style={styles.resultBody}>Submitted results: {[soilValues.ph && `pH ${soilValues.ph}`, soilValues.nitrogen && `N ${soilValues.nitrogen}`, soilValues.phosphorus && `P ${soilValues.phosphorus}`, soilValues.potassium && `K ${soilValues.potassium}`, soilValues.organicMatter && `Organic matter ${soilValues.organicMatter}`, soilValues.texture && `Texture: ${soilValues.texture}`, sampleMetadata.sampleDepth && `Depth: ${sampleMetadata.sampleDepth}`].filter(Boolean).join(' · ')}.</Text> : null}
+                {analysisResult.labResultsAnalysis ? <Text style={styles.resultSectionTitle}>Soil interpretation</Text> : null}
                 {analysisResult.labResultsAnalysis ? <Text style={styles.resultBody}>{analysisResult.labResultsAnalysis}</Text> : null}
                 {analysisResult.soilAnalysisFromImage ? <Text style={styles.resultBody}>Previous photo-based analysis: {analysisResult.soilAnalysisFromImage}</Text> : null}
                 {analysisResult.soilPropertiesAnalysis ? <Text style={styles.resultBody}>{analysisResult.soilPropertiesAnalysis}</Text> : null}
-                {analysisResult.siteAltitude != null ? <Text style={styles.resultBody}>Approximate device altitude at sample location: {Math.round(analysisResult.siteAltitude)} m.</Text> : null}
               </View>
 
               <Text style={styles.resultSectionTitle}>Region analysis</Text>
@@ -246,7 +259,7 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
                 <Text style={styles.resultBody}>{analysisResult.weatherForecast}</Text>
               </View>
 
-              <Text style={styles.resultSectionTitle}>Seed selection results &amp; supportive evidence</Text>
+              <Text style={styles.resultSectionTitle}>Seed recommendations &amp; supporting evidence</Text>
               {analysisResult.seedRecommendations.length ? analysisResult.seedRecommendations.map((recommendation, index) => (
                 <View key={`${recommendation.crop}-${recommendation.variety}-${index}`} style={styles.seedResult}>
                   <Text style={styles.seedName}>{recommendation.crop} — {recommendation.variety}</Text>
@@ -257,7 +270,7 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
                     <Text key={`${evidenceIndex}-${evidence}`} style={styles.evidence}>• {evidence}</Text>
                   ))}
                 </View>
-              )) : <Text style={styles.resultBody}>There is not enough evidence to recommend a registered variety yet. Add more soil test results or ask an agronomist.</Text>}
+              )) : <Text style={styles.resultBody}>No registered variety could be verified for this result. Review the entered crop and location, then run the analysis again.</Text>}
               {analysisResult.dataSources?.length ? (
                 <View style={styles.dataSources}>
                   <Text style={styles.dataSourcesTitle}>Data sources</Text>
@@ -272,7 +285,7 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
             </View>
           ) : (
           <>
-          <Text style={styles.locationHint}>Enter the values from a soil laboratory report.</Text>
+          <Text style={styles.locationHint}>Enter every result exactly as printed, including units.</Text>
           <View style={styles.labGrid}>
               <View style={styles.labField}>
                 <Text style={styles.labLabel}>pH</Text>
@@ -280,20 +293,40 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
               </View>
               <View style={styles.labField}>
                 <Text style={styles.labLabel}>Nitrogen (N)</Text>
-                <TextInput accessibilityLabel="Lab nitrogen value and unit" placeholder="enter value + unit of measure" placeholderTextColor="#89918B" value={soilValues.nitrogen} onChangeText={(nitrogen) => setSoilValues((current) => ({ ...current, nitrogen }))} style={styles.input} />
+                <TextInput accessibilityLabel="Lab nitrogen value and unit" placeholder="e.g. 12 ppm" placeholderTextColor="#89918B" value={soilValues.nitrogen} onChangeText={(nitrogen) => setSoilValues((current) => ({ ...current, nitrogen }))} style={styles.input} />
               </View>
               <View style={styles.labField}>
                 <Text style={styles.labLabel}>Phosphorus (P)</Text>
-                <TextInput accessibilityLabel="Lab phosphorus value and unit" placeholder="enter value + unit of measure" placeholderTextColor="#89918B" value={soilValues.phosphorus} onChangeText={(phosphorus) => setSoilValues((current) => ({ ...current, phosphorus }))} style={styles.input} />
+                <TextInput accessibilityLabel="Lab phosphorus value and unit" placeholder="e.g. 10 ppm" placeholderTextColor="#89918B" value={soilValues.phosphorus} onChangeText={(phosphorus) => setSoilValues((current) => ({ ...current, phosphorus }))} style={styles.input} />
               </View>
               <View style={styles.labField}>
                 <Text style={styles.labLabel}>Potassium (K)</Text>
-                <TextInput accessibilityLabel="Lab potassium value and unit" placeholder="enter value + unit of measure" placeholderTextColor="#89918B" value={soilValues.potassium} onChangeText={(potassium) => setSoilValues((current) => ({ ...current, potassium }))} style={styles.input} />
+                <TextInput accessibilityLabel="Lab potassium value and unit" placeholder="e.g. 12 ppm" placeholderTextColor="#89918B" value={soilValues.potassium} onChangeText={(potassium) => setSoilValues((current) => ({ ...current, potassium }))} style={styles.input} />
               </View>
               <View style={styles.labField}>
                 <Text style={styles.labLabel}>Organic matter</Text>
-                <TextInput accessibilityLabel="Lab organic matter value and unit" placeholder="enter value + unit of measure" placeholderTextColor="#89918B" value={soilValues.organicMatter} onChangeText={(organicMatter) => setSoilValues((current) => ({ ...current, organicMatter }))} style={styles.input} />
+                <TextInput accessibilityLabel="Lab organic matter value and unit" placeholder="e.g. 2.1% or 21 g/kg" placeholderTextColor="#89918B" value={soilValues.organicMatter} onChangeText={(organicMatter) => setSoilValues((current) => ({ ...current, organicMatter }))} style={styles.input} />
               </View>
+              <View style={styles.labField}>
+                <Text style={styles.labLabel}>Soil texture</Text>
+                <TextInput accessibilityLabel="Lab soil texture" placeholder="e.g. sandy loam" placeholderTextColor="#89918B" value={soilValues.texture} onChangeText={(texture) => setSoilValues((current) => ({ ...current, texture }))} style={styles.input} />
+              </View>
+          </View>
+
+          <View style={styles.reportDetails}>
+            <Text style={styles.labLabel}>Sample depth (required)</Text>
+            <TextInput accessibilityLabel="Soil sample depth" placeholder="e.g. 0–20 cm" placeholderTextColor="#89918B" value={sampleMetadata.sampleDepth ?? ''} onChangeText={(sampleDepth) => setSampleMetadata((current) => ({ ...current, sampleDepth }))} style={styles.metadataInput} />
+            <Pressable accessibilityRole="button" accessibilityState={{ expanded: showReportDetails }} onPress={() => setShowReportDetails((current) => !current)} style={styles.detailsToggle}>
+              <Text style={styles.detailsToggleText}>{showReportDetails ? 'Hide extra report details' : 'Add report details for a better match (optional)'}</Text>
+              <SymbolView name={{ ios: showReportDetails ? 'chevron.up' : 'chevron.down', android: showReportDetails ? 'expand_less' : 'expand_more', web: showReportDetails ? 'expand_less' : 'expand_more' }} tintColor={green} size={16} />
+            </Pressable>
+            {showReportDetails ? (
+              <>
+                <TextInput accessibilityLabel="Preferred crop" placeholder="Crop you plan to grow (optional)" placeholderTextColor="#89918B" value={sampleMetadata.targetCrop ?? ''} onChangeText={(targetCrop) => setSampleMetadata((current) => ({ ...current, targetCrop }))} style={styles.metadataInput} />
+                <TextInput accessibilityLabel="Laboratory test method" placeholder="Lab test method (if shown)" placeholderTextColor="#89918B" value={sampleMetadata.testMethod ?? ''} onChangeText={(testMethod) => setSampleMetadata((current) => ({ ...current, testMethod }))} style={styles.metadataInput} />
+                <TextInput accessibilityLabel="Lab interpretation ranges" placeholder="Reference ranges / interpretation from report" placeholderTextColor="#89918B" value={sampleMetadata.referenceRanges ?? ''} onChangeText={(referenceRanges) => setSampleMetadata((current) => ({ ...current, referenceRanges }))} style={[styles.metadataInput, styles.multilineInput]} multiline />
+              </>
+            ) : null}
           </View>
 
           <View style={styles.locationRow}>
@@ -383,6 +416,10 @@ const styles = StyleSheet.create({
   inputRow: { flexDirection: 'row', gap: 8 },
   input: { width: '100%', height: 42, borderRadius: 10, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#5DAC2C', paddingHorizontal: 24, color: ink, fontSize: 13 },
   metadataInput: { height: 42, borderRadius: 8, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E0E5DE', paddingHorizontal: 10, color: ink, fontSize: 12, marginBottom: 8 },
+  reportDetails: { marginHorizontal: 28, marginTop: 10 },
+  detailsToggle: { minHeight: 38, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
+  detailsToggleText: { color: green, fontSize: 12, fontWeight: '600' },
+  multilineInput: { height: 72, textAlignVertical: 'top', paddingTop: 10 },
   metadataHalf: { width: '49%' },
   labGrid: { flexDirection: 'column', gap: 9, marginHorizontal: 28, marginTop: 4 },
   labField: { width: '100%', gap: 3 },

@@ -1,10 +1,10 @@
-import ServiceSelection from '@/components/service-selection';
+import { router } from 'expo-router';
 import * as Location from 'expo-location';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import type { FieldLocation } from '@/utils/field-location';
+import { useFieldLocation } from '@/contexts/field-location-context';
 
 const colors = {
   background: '#FFFFFF',
@@ -25,8 +25,8 @@ const benefits = [
     imageLabel: 'Illustration of a plant ready to scan',
   },
   {
-    title: 'Seed selection',
-    description: 'Use lab soil results, your location, and local weather to find seed options suited to field conditions.',
+    title: 'Pre-Season Analysis',
+    description: 'Combine soil laboratory results, your location, and local weather to guide crop and seed choices before planting.',
     image: require('../../assets/images/seeds.jpg'),
     imageLabel: 'Seeds ready for planting',
   },
@@ -39,15 +39,14 @@ const benefits = [
 ];
 
 export default function HomeScreen() {
-  const [showServices, setShowServices] = useState(false);
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   const [requestingLocation, setRequestingLocation] = useState(false);
   const [locationError, setLocationError] = useState('');
-  const [fieldLocation, setFieldLocation] = useState<FieldLocation | null>(null);
+  const { fieldLocation, setFieldLocation } = useFieldLocation();
 
   function handleGetStarted() {
     if (fieldLocation) {
-      setShowServices(true);
+      router.navigate('/explore');
       return;
     }
     setLocationError('');
@@ -89,7 +88,7 @@ export default function HomeScreen() {
         altitude: position.coords.altitude,
       });
       setShowLocationPrompt(false);
-      setShowServices(true);
+      router.navigate('/explore');
     } catch {
       setLocationError('Could not get your location. Check location services or continue without it.');
     } finally {
@@ -100,16 +99,7 @@ export default function HomeScreen() {
   function continueWithoutLocation() {
     setFieldLocation(null);
     setShowLocationPrompt(false);
-    setShowServices(true);
-  }
-
-  if (showServices) {
-    return (
-      <ServiceSelection
-        location={fieldLocation}
-        onBack={() => setShowServices(false)}
-      />
-    );
+    router.navigate('/explore');
   }
 
   return (
@@ -218,37 +208,35 @@ const styles = StyleSheet.create({
   },
   benefits: {
     width: '100%',
-    marginTop: 24,
-    marginBottom: 26,
+    marginTop: 8,
+    marginBottom: 24,
   },
   benefitRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: 16,
-    padding: 12,
-    marginBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E9EEEA',
+    paddingVertical: 12,
   },
   benefitImage: {
-    width: 64,
-    height: 64,
-    borderRadius: 12,
+    width: 56,
+    height: 56,
+    borderRadius: 10,
     backgroundColor: '#EAF4E6',
+    opacity: 0.78,
   },
   benefitTextWrap: {
     flex: 1,
   },
   benefitTitle: {
-    color: colors.ink,
+    color: '#59645D',
     fontSize: 13,
     lineHeight: 18,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   benefitDescription: {
-    color: colors.muted,
+    color: '#707A73',
     fontSize: 12,
     lineHeight: 17,
     marginTop: 2,

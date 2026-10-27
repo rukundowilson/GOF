@@ -49,9 +49,9 @@ export default function SeedRecommendation({
           </View>
 
           <View style={styles.intro}>
-            <Text style={styles.title}>Seed selection</Text>
+            <Text style={styles.title}>Pre-Season Analysis</Text>
             <Text style={styles.description}>
-              AI compares your soil laboratory results with your chosen location, district altitude and topography, and available climate information to identify suitable registered seed varieties.
+              Review your soil laboratory results with your location, district terrain, and available weather information to guide decisions before planting. Seed recommendations use varieties registered in Rwanda.
             </Text>
             <Text style={styles.sourceText}>
               Sources: RICA Rwanda Plant Variety List 2025, Rwanda district topography dataset, and Meteo Rwanda Weather Forecast for October 2026.

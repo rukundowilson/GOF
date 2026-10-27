@@ -1,31 +1,28 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { useColorScheme } from 'react-native';
-
-import { Colors } from '@/constants/theme';
 
 export default function AppTabs() {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
-
   return (
     <NativeTabs
-      backgroundColor={colors.background}
-      indicatorColor="#5DAC2C"
-      shadowColor="#1D2B23"
-      labelStyle={{ selected: { color: '#FFFFFF' } }}>
+      backgroundColor="#FFFFFF"
+      indicatorColor="#EAF4E6"
+      iconColor={{ default: '#9AA39C', selected: '#5DAC2C' }}
+      rippleColor="#EAF4E6"
+      shadowColor="#DCE6D9"
+      labelVisibilityMode="labeled"
+      labelStyle={{
+        default: { color: '#737B75' },
+        selected: { color: '#467232', fontWeight: '700' },
+      }}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/home.png')}
-          renderingMode="template"
-        />
+        <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="explore">
-        <NativeTabs.Trigger.Label>Explore</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>Services</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
-          renderingMode="template"
+          sf={{ default: 'square.grid.2x2', selected: 'square.grid.2x2.fill' }}
+          md="apps"
         />
       </NativeTabs.Trigger>
     </NativeTabs>

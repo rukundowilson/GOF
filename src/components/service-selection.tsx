@@ -51,8 +51,8 @@ const services = [
   },
   {
     id: 'seed-recommendation',
-    title: 'Seed selection',
-    description: "Use lab results, location, district altitude, and forecast to compare registered Rwanda seed varieties.",
+    title: 'Pre-Season Analysis',
+    description: 'Review soil laboratory results alongside your location and local weather to support crop and seed decisions before planting.',
     ready: true,
     image: require('../../assets/images/seeds.jpg'),
     imageLabel: 'Seeds ready for planting',
@@ -165,13 +165,13 @@ export default function ServiceSelection({ onBack, location }: ServiceSelectionP
                     accessibilityRole="link"
                     onPress={() => { void Linking.openURL('https://smartnkunganire.rw/').catch(() => setMessage('Could not open the Smart Nkunganire website.')); }}
                     style={({ pressed }) => [styles.smartActionButton, pressed && styles.cardPressed]}>
-                    <Text style={styles.smartActionText}>Order online</Text>
+                    <Text style={styles.smartActionText}>order(web)</Text>
                   </Pressable>
                   <Pressable
                     accessibilityRole="link"
                     onPress={() => { void Linking.openURL('tel:*774%23').catch(() => setMessage('Dial *774# from your mobile phone to continue.')); }}
                     style={({ pressed }) => [styles.smartActionButton, styles.smartUssdButton, pressed && styles.cardPressed]}>
-                    <Text style={styles.smartActionText}>Dial *774#</Text>
+                    <Text style={styles.smartActionText}>order(ussd)</Text>
                   </Pressable>
                 </View>
                 <View style={styles.smartHowItWorks}>
@@ -217,7 +217,7 @@ export default function ServiceSelection({ onBack, location }: ServiceSelectionP
                     accessibilityRole="link"
                     onPress={() => { void Linking.openURL('tel:*774*2%23').catch(() => setMessage('Dial *774*2# from your mobile phone to continue.')); }}
                     style={({ pressed }) => [styles.smartActionButton, styles.smartUssdButton, pressed && styles.cardPressed]}>
-                    <Text style={styles.smartActionText}>Dial *774*2#</Text>
+                    <Text style={styles.smartActionText}>order(ussd)</Text>
                   </Pressable>
                 </View>
                 <View style={[styles.smartHowItWorks, styles.kungaharaHowItWorks]}>
@@ -643,7 +643,7 @@ const styles = StyleSheet.create({
   programDescription: { color: '#292929', fontSize: 13, lineHeight: 17, textAlign: 'center' },
   programLink: { color: '#2674D9', fontSize: 13, lineHeight: 18, fontWeight: '400', textAlign: 'center', marginTop: 2 },
   smartTitle: { color: accent, fontSize: 24, lineHeight: 31, fontWeight: '800', textAlign: 'center', marginTop: 17, marginBottom: 18 },
-  smartIntro: { color: ink, fontSize: 15, lineHeight: 20, fontWeight: '400', textAlign: 'center', marginHorizontal: 9 },
+  smartIntro: { color: ink, fontSize: 15, lineHeight: 20, fontWeight: '600', textAlign: 'center', marginHorizontal: 9 },
   smartWebsiteLink: { alignSelf: 'center', marginTop: 19, marginBottom: 10, paddingVertical: 3, paddingHorizontal: 6 },
   smartWebsiteText: { color: '#2674D9', fontSize: 14, lineHeight: 20, fontWeight: '400', textAlign: 'center', textDecorationLine: 'none' },
   smartActions: { alignItems: 'center', gap: 12, marginTop: 1 },

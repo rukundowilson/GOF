@@ -1,7 +1,5 @@
 import { SymbolView } from 'expo-symbols';
-import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import { File as ExpoFile } from 'expo-file-system';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, BackHandler, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,7 +15,6 @@ type CurrentCoordinates = { latitude: number; longitude: number; accuracy: numbe
 
 export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLocation: FieldLocation | null; onBack?: () => void }) {
   const [soilImage, setSoilImage] = useState<string | null>(null);
-  const [showProperties, setShowProperties] = useState(false);
   const [locationLabel, setLocationLabel] = useState(fieldLocation?.label ?? 'Current location unavailable');
   const [coordinates, setCoordinates] = useState<CurrentCoordinates | null>(
     fieldLocation?.latitude != null && fieldLocation.longitude != null
@@ -30,8 +27,8 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
   const [analyzing, setAnalyzing] = useState(false);
   const [records, setRecords] = useState<SoilAnalysisRecord[]>([]);
   const [showAllRecords, setShowAllRecords] = useState(false);
-  const [viewingRecordId, setViewingRecordId] = useState<string | null>(null);
-  const [soilValues, setSoilValues] = useState({ ph: '', nitrogen: '', moisture: '' });
+  const [soilValues, setSoilValues] = useState({ ph: '', nitrogen: '', phosphorus: '', potassium: '', organicMatter: '', texture: '' });
+  const [sampleMetadata, setSampleMetadata] = useState({ labName: '', sampleId: '', sampleDate: '' });
 
   useEffect(() => {
     void loadSoilAnalysisRecords().then(setRecords);
@@ -41,7 +38,6 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
     if (!analysisResult || Platform.OS === 'web') return;
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       setAnalysisResult(null);
-      setViewingRecordId(null);
       setAnalysisMessage('');
       return true;
     });
@@ -114,32 +110,25 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
   }
 
   function openRecord(record: SoilAnalysisRecord) {
-    setViewingRecordId(record.id);
     setAnalysisResult(record.result);
     setSoilImage(record.photoUri);
-    setSoilValues(record.soilValues);
+    setSoilValues({
+      ph: record.soilValues.ph ?? '',
+      nitrogen: record.soilValues.nitrogen ?? '',
+      phosphorus: record.soilValues.phosphorus ?? '',
+      potassium: record.soilValues.potassium ?? '',
+      organicMatter: record.soilValues.organicMatter ?? '',
+      texture: record.soilValues.texture ?? '',
+    });
+    setSampleMetadata(record.sampleMetadata ?? { labName: '', sampleId: '', sampleDate: '' });
     setLocationLabel(record.locationLabel);
-    setCoordinates({ latitude: record.latitude, longitude: record.longitude, accuracy: null, altitude: null });
+    setCoordinates({ latitude: record.latitude, longitude: record.longitude, accuracy: null, altitude: record.altitude ?? null });
     setAnalysisMessage('');
   }
 
   function closeResult() {
     setAnalysisResult(null);
-    setViewingRecordId(null);
     setAnalysisMessage('');
-  }
-
-  async function pickSoilImage() {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.85,
-    });
-    if (!result.canceled) {
-      setSoilImage(result.assets[0].uri);
-      setAnalysisMessage('');
-    }
   }
 
   async function runAnalysis() {
@@ -147,32 +136,29 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
       setAnalysisMessage('Get your current location first so the recommendations use the right area.');
       return;
     }
-    if (!soilImage && !soilValues.ph && !soilValues.nitrogen && !soilValues.moisture) {
-      setAnalysisMessage('Add a soil image or enter soil properties to continue.');
+    if (!soilValues.ph.trim() || ![soilValues.nitrogen, soilValues.phosphorus, soilValues.potassium, soilValues.organicMatter].some((value) => value.trim())) {
+      setAnalysisMessage('Enter the lab pH and at least one lab-reported nutrient or organic matter result.');
       return;
     }
     setAnalyzing(true);
     setAnalysisMessage('');
     setAnalysisResult(null);
-    setViewingRecordId(null);
+    setSoilImage(null);
     try {
       const form = new FormData();
-      if (soilImage) {
-        const extension = soilImage.split('?')[0].toLowerCase().endsWith('.png') ? 'png' : 'jpg';
-        if (Platform.OS === 'web') {
-          const imageResponse = await fetch(soilImage);
-          if (!imageResponse.ok) throw new Error('Could not read the selected soil photo. Choose it again and retry.');
-          const imageBlob = await imageResponse.blob();
-          const mimeType = imageBlob.type === 'image/png' ? 'image/png' : 'image/jpeg';
-          form.append('image', imageBlob, `soil.${mimeType === 'image/png' ? 'png' : 'jpg'}`);
-        } else {
-          form.append('image', new ExpoFile(soilImage), `soil.${extension}`);
-        }
-      }
       form.append('ph', soilValues.ph);
       form.append('nitrogen', soilValues.nitrogen);
-      form.append('moisture', soilValues.moisture);
+      form.append('phosphorus', soilValues.phosphorus);
+      form.append('potassium', soilValues.potassium);
+      form.append('organicMatter', soilValues.organicMatter);
+      form.append('texture', soilValues.texture);
+      form.append('labName', sampleMetadata.labName);
+      form.append('sampleId', sampleMetadata.sampleId);
+      form.append('sampleDate', sampleMetadata.sampleDate);
       form.append('locationLabel', locationLabel);
+      form.append('latitude', String(coordinates.latitude));
+      form.append('longitude', String(coordinates.longitude));
+      form.append('altitude', coordinates.altitude == null ? '' : String(coordinates.altitude));
 
       const response = await fetch('/api/soil-analysis', { method: 'POST', body: form });
       const payload = await response.json() as SoilAnalysisResult & { error?: string };
@@ -180,11 +166,13 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
       setAnalysisResult(payload);
       try {
         const record = await saveSoilAnalysisRecord({
-          photoUri: soilImage,
+          photoUri: null,
           locationLabel,
           latitude: coordinates.latitude,
           longitude: coordinates.longitude,
+          altitude: coordinates.altitude,
           soilValues,
+          sampleMetadata,
           result: payload,
         });
         setRecords((current) => [record, ...current.filter((item) => item.id !== record.id)].slice(0, 50));
@@ -224,15 +212,18 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
             <View style={styles.results}>
               {analysisMessage ? <Text style={styles.analysisMessage}>{analysisMessage}</Text> : null}
               {soilImage ? <Image source={{ uri: soilImage }} style={styles.resultPhoto} resizeMode="cover" /> : null}
-              <Text style={styles.resultTitle}>{soilImage ? 'Soil analysis from image' : 'Soil property analysis'}</Text>
+              <Text style={styles.resultTitle}>{soilImage ? 'Legacy soil photo analysis' : 'Seed planning from laboratory results'}</Text>
               <View style={styles.resultSummary}>
-                <Text style={styles.resultBody}>{analysisResult.soilAnalysisFromImage}</Text>
+                {sampleMetadata.labName ? <Text style={styles.resultBody}>Laboratory: {sampleMetadata.labName}</Text> : null}
+                {sampleMetadata.sampleId ? <Text style={styles.resultBody}>Sample ID: {sampleMetadata.sampleId}</Text> : null}
+                {sampleMetadata.sampleDate ? <Text style={styles.resultBody}>Sample date: {sampleMetadata.sampleDate}</Text> : null}
                 {Object.values(soilValues).some(Boolean) ? (
-                  <Text style={styles.resultBody}>
-                    Values entered: {[soilValues.ph && `pH ${soilValues.ph}`, soilValues.nitrogen && `Nitrogen ${soilValues.nitrogen}`, soilValues.moisture && `Moisture ${soilValues.moisture}`].filter(Boolean).join(' · ')}. Units are as entered.
-                  </Text>
+                  <Text style={styles.resultBody}>Lab values as reported: {[soilValues.ph && `pH ${soilValues.ph}`, soilValues.nitrogen && `N ${soilValues.nitrogen}`, soilValues.phosphorus && `P ${soilValues.phosphorus}`, soilValues.potassium && `K ${soilValues.potassium}`, soilValues.organicMatter && `Organic matter ${soilValues.organicMatter}`, soilValues.texture && `Texture ${soilValues.texture}`].filter(Boolean).join(' · ')}.</Text>
                 ) : null}
-                <Text style={styles.resultBody}>{analysisResult.soilPropertiesAnalysis}</Text>
+                {analysisResult.labResultsAnalysis ? <Text style={styles.resultBody}>{analysisResult.labResultsAnalysis}</Text> : null}
+                {analysisResult.soilAnalysisFromImage ? <Text style={styles.resultBody}>Previous photo-based analysis: {analysisResult.soilAnalysisFromImage}</Text> : null}
+                {analysisResult.soilPropertiesAnalysis ? <Text style={styles.resultBody}>{analysisResult.soilPropertiesAnalysis}</Text> : null}
+                {analysisResult.siteAltitude != null ? <Text style={styles.resultBody}>Approximate device altitude at sample location: {Math.round(analysisResult.siteAltitude)} m.</Text> : null}
               </View>
 
               <Text style={styles.resultSectionTitle}>Region analysis</Text>
@@ -267,6 +258,12 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
                   ))}
                 </View>
               )) : <Text style={styles.resultBody}>There is not enough evidence to recommend a registered variety yet. Add more soil test results or ask an agronomist.</Text>}
+              {analysisResult.dataSources?.length ? (
+                <View style={styles.dataSources}>
+                  <Text style={styles.dataSourcesTitle}>Data sources</Text>
+                  {analysisResult.dataSources.map((source) => <Text key={source} style={styles.dataSource}>{source}</Text>)}
+                </View>
+              ) : null}
               {analysisResult.cautions.length ? (
                 <View style={styles.cautionBox}>
                   {analysisResult.cautions.map((caution, index) => <Text key={`${index}-${caution}`} style={styles.cautionText}>{caution}</Text>)}
@@ -275,32 +272,29 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
             </View>
           ) : (
           <>
-          <Text style={styles.locationHint}>Add a soil photo or test values for better seed recommendations.</Text>
-          <View style={styles.actions}>
-            <Pressable accessibilityRole="button" onPress={() => void pickSoilImage()} style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}>
-              <Text style={styles.actionText}>{soilImage ? 'Change soil image' : 'Upload soil image'}</Text>
-            </Pressable>
-            {soilImage ? <Image source={{ uri: soilImage }} style={styles.selectedImage} resizeMode="cover" /> : null}
-            <Text style={styles.orText}>or</Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ expanded: showProperties }}
-              onPress={() => setShowProperties((visible) => !visible)}
-              style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}>
-              <Text style={styles.actionText}>{showProperties ? 'Hide soil properties' : 'Enter soil properties'}</Text>
-            </Pressable>
-          </View>
-
-          {showProperties ? (
-            <View style={styles.propertiesPanel}>
-              <Text style={styles.propertiesTitle}>Soil test results</Text>
-              <View style={styles.inputRow}>
-                <TextInput accessibilityLabel="Soil pH" keyboardType="decimal-pad" placeholder="pH" placeholderTextColor="#89918B" value={soilValues.ph} onChangeText={(ph) => setSoilValues((current) => ({ ...current, ph }))} style={styles.input} />
-                <TextInput accessibilityLabel="Nitrogen level" keyboardType="decimal-pad" placeholder="Nitrogen" placeholderTextColor="#89918B" value={soilValues.nitrogen} onChangeText={(nitrogen) => setSoilValues((current) => ({ ...current, nitrogen }))} style={styles.input} />
-                <TextInput accessibilityLabel="Soil moisture" keyboardType="decimal-pad" placeholder="Moisture" placeholderTextColor="#89918B" value={soilValues.moisture} onChangeText={(moisture) => setSoilValues((current) => ({ ...current, moisture }))} style={styles.input} />
+          <Text style={styles.locationHint}>Enter the values from a soil laboratory report.</Text>
+          <View style={styles.labGrid}>
+              <View style={styles.labField}>
+                <Text style={styles.labLabel}>pH</Text>
+                <TextInput accessibilityLabel="Lab soil pH" keyboardType="decimal-pad" placeholder="eg 5.8" placeholderTextColor="#89918B" value={soilValues.ph} onChangeText={(ph) => setSoilValues((current) => ({ ...current, ph }))} style={styles.input} />
               </View>
-            </View>
-          ) : null}
+              <View style={styles.labField}>
+                <Text style={styles.labLabel}>Nitrogen (N)</Text>
+                <TextInput accessibilityLabel="Lab nitrogen value and unit" placeholder="enter value + unit of measure" placeholderTextColor="#89918B" value={soilValues.nitrogen} onChangeText={(nitrogen) => setSoilValues((current) => ({ ...current, nitrogen }))} style={styles.input} />
+              </View>
+              <View style={styles.labField}>
+                <Text style={styles.labLabel}>Phosphorus (P)</Text>
+                <TextInput accessibilityLabel="Lab phosphorus value and unit" placeholder="enter value + unit of measure" placeholderTextColor="#89918B" value={soilValues.phosphorus} onChangeText={(phosphorus) => setSoilValues((current) => ({ ...current, phosphorus }))} style={styles.input} />
+              </View>
+              <View style={styles.labField}>
+                <Text style={styles.labLabel}>Potassium (K)</Text>
+                <TextInput accessibilityLabel="Lab potassium value and unit" placeholder="enter value + unit of measure" placeholderTextColor="#89918B" value={soilValues.potassium} onChangeText={(potassium) => setSoilValues((current) => ({ ...current, potassium }))} style={styles.input} />
+              </View>
+              <View style={styles.labField}>
+                <Text style={styles.labLabel}>Organic matter</Text>
+                <TextInput accessibilityLabel="Lab organic matter value and unit" placeholder="enter value + unit of measure" placeholderTextColor="#89918B" value={soilValues.organicMatter} onChangeText={(organicMatter) => setSoilValues((current) => ({ ...current, organicMatter }))} style={styles.input} />
+              </View>
+          </View>
 
           <View style={styles.locationRow}>
             <View style={styles.pinBadge}>
@@ -308,7 +302,7 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
             </View>
             <Text style={styles.fieldLocation} numberOfLines={1}>{locationLabel}</Text>
             <Pressable accessibilityRole="button" disabled={locating} onPress={() => void refreshCurrentLocation()}>
-              {locating ? <ActivityIndicator size="small" color="#2767D9" /> : <Text style={styles.changeText}>refresh</Text>}
+              {locating ? <ActivityIndicator size="small" color="#2767D9" /> : <Text style={styles.changeText}>change</Text>}
             </Pressable>
           </View>
 
@@ -319,7 +313,7 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
           />
 
           <Pressable accessibilityRole="button" disabled={analyzing} onPress={() => void runAnalysis()} style={({ pressed }) => [styles.actionButton, styles.runButton, pressed && styles.pressed, analyzing && styles.disabledButton]}>
-            {analyzing ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.actionText}>Run analysis</Text>}
+            {analyzing ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.actionText}>run the analysis</Text>}
           </Pressable>
           {analysisMessage ? <Text style={styles.analysisMessage}>{analysisMessage}</Text> : null}
           </>
@@ -327,7 +321,7 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
           {!analysisResult ? (
           <>
           <View style={styles.recentHeader}>
-            <Text style={styles.recentTitle}>Recent records</Text>
+            <Text style={styles.recentTitle}>Recent soil records</Text>
             {records.length > 5 ? (
               <Pressable accessibilityRole="button" onPress={() => setShowAllRecords((current) => !current)}>
                 <Text style={styles.seeAll}>{showAllRecords ? 'Show recent' : 'See all'}</Text>
@@ -343,7 +337,7 @@ export default function SoilAnalysisScreen({ fieldLocation, onBack }: { fieldLoc
               style={({ pressed }) => [styles.record, pressed && styles.pressed]}>
               {record.photoUri ? <Image source={{ uri: record.photoUri }} style={styles.recordPhoto} resizeMode="cover" /> : null}
               <View style={styles.recordChevron}><SymbolView name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }} tintColor={ink} size={15} /></View>
-              <Text style={styles.recordLocation} numberOfLines={2}>{record.locationLabel}</Text>
+              <Text style={styles.recordLocation} numberOfLines={2}>{record.sampleMetadata?.sampleId ? `Lab sample ${record.sampleMetadata.sampleId}` : record.photoUri ? 'Previous photo analysis' : 'Soil analysis'} · {record.locationLabel}</Text>
               <Text style={styles.recordDate}>{new Date(record.createdAt).toLocaleDateString()}</Text>
             </Pressable>
           )) : (
@@ -374,7 +368,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#FFFFFF' },
   scrollContent: { flexGrow: 1, paddingHorizontal: 16, paddingBottom: 24 },
   content: { width: '100%', maxWidth: 560, alignSelf: 'center' },
-  header: { minHeight: 72, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 },
+  header: { minHeight: 64, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   logo: { width: 126, height: 56 },
   headerLocation: { maxWidth: '55%', flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 8 },
   headerLocationText: { color: muted, fontSize: 11 },
@@ -387,13 +381,18 @@ const styles = StyleSheet.create({
   propertiesPanel: { marginHorizontal: 13, marginTop: 10, padding: 13, borderWidth: 1, borderColor: '#E7EBE6', borderRadius: 12, backgroundColor: '#FAFBF9' },
   propertiesTitle: { color: ink, fontSize: 13, fontWeight: '700', marginBottom: 10 },
   inputRow: { flexDirection: 'row', gap: 8 },
-  input: { flex: 1, minWidth: 0, height: 42, borderRadius: 8, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E0E5DE', paddingHorizontal: 10, color: ink, fontSize: 12 },
-  locationHint: { color: ink, fontSize: 11, textAlign: 'center', marginTop: 18, marginBottom: 12 },
-  locationRow: { minHeight: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 },
-  pinBadge: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#1672E8', alignItems: 'center', justifyContent: 'center' },
+  input: { width: '100%', height: 42, borderRadius: 10, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#5DAC2C', paddingHorizontal: 24, color: ink, fontSize: 13 },
+  metadataInput: { height: 42, borderRadius: 8, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E0E5DE', paddingHorizontal: 10, color: ink, fontSize: 12, marginBottom: 8 },
+  metadataHalf: { width: '49%' },
+  labGrid: { flexDirection: 'column', gap: 9, marginHorizontal: 28, marginTop: 4 },
+  labField: { width: '100%', gap: 3 },
+  labLabel: { color: ink, fontSize: 13, fontWeight: '400' },
+  locationHint: { color: ink, fontSize: 13, textAlign: 'left', marginHorizontal: 28, marginTop: 6, marginBottom: 4 },
+  locationRow: { minHeight: 34, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 8, marginHorizontal: 34, marginTop: 6, marginBottom: 6 },
+  pinBadge: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#1672E8', alignItems: 'center', justifyContent: 'center' },
   fieldLocation: { maxWidth: '60%', color: muted, fontSize: 12 },
   changeText: { color: '#2767D9', fontSize: 11, marginLeft: 8 },
-  runButton: { marginHorizontal: 13, marginTop: 18 },
+  runButton: { marginHorizontal: 28, marginTop: 8, borderRadius: 0 },
   results: { paddingHorizontal: 13, paddingTop: 8 },
   resultPhoto: { width: '72%', height: 150, alignSelf: 'center', borderRadius: 4, marginBottom: 18 },
   resultTitle: { color: ink, fontSize: 14, fontWeight: '700', textAlign: 'center', marginBottom: 9 },
@@ -402,6 +401,9 @@ const styles = StyleSheet.create({
   resultBody: { color: ink, fontSize: 12, lineHeight: 17 },
   resultLocation: { minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 10 },
   seedResult: { padding: 12, borderWidth: 1, borderColor: '#D8DFD8', borderRadius: 8, marginBottom: 8, backgroundColor: '#FFFFFF' },
+  dataSources: { gap: 5, marginTop: 14, padding: 11, backgroundColor: '#F3F6F1', borderRadius: 8 },
+  dataSourcesTitle: { color: ink, fontSize: 12, fontWeight: '700' },
+  dataSource: { color: muted, fontSize: 10, lineHeight: 14 },
   seedName: { color: green, fontSize: 13, fontWeight: '800', marginBottom: 6 },
   seedMeta: { color: muted, fontSize: 11, lineHeight: 16, marginTop: 5 },
   evidence: { color: ink, fontSize: 11, lineHeight: 16, marginTop: 4 },

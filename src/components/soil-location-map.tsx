@@ -18,7 +18,7 @@ export default function SoilLocationMap({ coordinates, onLocate }: { coordinates
 }
 
 const styles = StyleSheet.create({
-  map: { width: '100%', height: 190, backgroundColor: '#F1F5F2', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 14 },
+  map: { width: '100%', height: 120, backgroundColor: '#F1F5F2', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 14 },
   text: { color: '#66736A', fontSize: 12, textAlign: 'center' },
   button: { minHeight: 36, borderRadius: 8, backgroundColor: '#FFFFFF', justifyContent: 'center', paddingHorizontal: 13, marginTop: 3 },
   buttonText: { color: '#167A45', fontSize: 12, fontWeight: '700' },

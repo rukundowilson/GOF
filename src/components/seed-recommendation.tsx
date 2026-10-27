@@ -49,17 +49,13 @@ export default function SeedRecommendation({
           </View>
 
           <View style={styles.intro}>
-            <Text style={styles.title}>Seed selection and planning</Text>
+            <Text style={styles.title}>Seed selection</Text>
             <Text style={styles.description}>
-              AI will use your current location, season, weather, altitude, and soil test when helping you choose seeds.
+              AI compares your soil laboratory results with your chosen location, district altitude and topography, and available climate information to identify suitable registered seed varieties.
             </Text>
-            <Text style={styles.description}>
-              Add soil test results or a clear photo for a better plan.
+            <Text style={styles.sourceText}>
+              Sources: RICA Rwanda Plant Variety List 2025, Rwanda district topography dataset, and Meteo Rwanda Weather Forecast for October 2026.
             </Text>
-            <Text style={styles.description}>
-              Recommendations use Rwanda’s registered seed varieties to support your decisions.
-            </Text>
-
             <Pressable
               accessibilityRole="button"
               onPress={() => setShowSoilAnalysis(true)}
@@ -99,9 +95,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 18,
   },
   logo: { width: 105, height: 58 },
   locationPill: {
+    maxWidth: '52%',
     minHeight: 35,
     flexDirection: 'row',
     alignItems: 'center',
@@ -110,19 +108,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F8F4',
     paddingHorizontal: 10,
   },
-  locationText: { color: muted, fontSize: 11, fontWeight: '600' },
-  intro: { width: '100%', maxWidth: 500, alignSelf: 'center', paddingTop: 136 },
-  title: { color: '#111A14', fontSize: 23, lineHeight: 30, fontWeight: '800', textAlign: 'center' },
-  description: { color: ink, fontSize: 13, lineHeight: 19, textAlign: 'center', marginTop: 20 },
+  locationText: { color: muted, fontSize: 11, fontWeight: '600', flexShrink: 1 },
+  intro: { width: '100%', maxWidth: 560, alignSelf: 'center', paddingTop: 92, paddingHorizontal: 8 },
+  title: { color: '#111A14', fontSize: 20, lineHeight: 26, fontWeight: '800', textAlign: 'center' },
+  description: { color: ink, fontSize: 14, lineHeight: 20, textAlign: 'center', marginTop: 24 },
+  sourceText: { color: muted, fontSize: 12, lineHeight: 18, textAlign: 'center', marginTop: 16 },
   continueButton: {
-    minHeight: 48,
+    minHeight: 52,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 8,
+    width: '100%',
+    alignSelf: 'center',
+    borderRadius: 10,
     backgroundColor: accent,
-    marginTop: 48,
+    marginTop: 28,
+    paddingHorizontal: 18,
   },
-  continueText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
+  continueText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
   backLink: {
     minHeight: 44,
     flexDirection: 'row',

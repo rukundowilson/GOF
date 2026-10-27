@@ -1,8 +1,12 @@
 export type SoilAnalysisResult = {
-  soilAnalysisFromImage: string;
-  soilPropertiesAnalysis: string;
+  labResultsAnalysis?: string;
+  /** Kept to display soil analyses saved before the lab-only workflow. */
+  soilAnalysisFromImage?: string;
+  soilPropertiesAnalysis?: string;
   districtAnalysis: string;
   weatherForecast: string;
+  siteAltitude?: number | null;
+  dataSources?: string[];
   districtContext: {
     district: string;
     province: string;
@@ -23,7 +27,18 @@ export type SoilAnalysisResult = {
   cautions: string[];
 };
 
-export type SoilMeasurements = { ph: string; nitrogen: string; moisture: string };
+export type SoilMeasurements = {
+  ph: string;
+  nitrogen: string;
+  phosphorus: string;
+  potassium: string;
+  organicMatter: string;
+  texture: string;
+  /** Legacy property retained for older locally saved analyses. */
+  moisture?: string;
+};
+
+export type SoilSampleMetadata = { labName: string; sampleId: string; sampleDate: string };
 
 export type SoilAnalysisRecord = {
   id: string;
@@ -32,6 +47,8 @@ export type SoilAnalysisRecord = {
   locationLabel: string;
   latitude: number;
   longitude: number;
+  altitude?: number | null;
   soilValues: SoilMeasurements;
+  sampleMetadata?: SoilSampleMetadata;
   result: SoilAnalysisResult;
 };

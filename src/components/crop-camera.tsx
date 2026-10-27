@@ -4,6 +4,7 @@ import { SymbolView } from 'expo-symbols';
 import { useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    Image,
     Pressable,
     StyleSheet,
     Text,
@@ -68,10 +69,16 @@ export default function CropCamera({ onBack, onPhotoSelected }: CropCameraProps)
           style={styles.backButton}>
           <SymbolView
             name={{ ios: 'arrow.left', android: 'arrow_back', web: 'arrow_back' }}
-            tintColor="#FFFFFF"
+            tintColor="#1D2B23"
             size={20}
           />
         </Pressable>
+        <Image
+          source={require('../../assets/images/logo/gof logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+          accessibilityLabel="GOF+ logo"
+        />
         <View style={styles.headerCopy}>
           <Text style={styles.eyebrow}>CROP DIAGNOSIS</Text>
           <Text style={styles.title}>Capture the affected area</Text>
@@ -125,7 +132,7 @@ export default function CropCamera({ onBack, onPhotoSelected }: CropCameraProps)
             style={({ pressed }) => [styles.uploadButton, pressed && styles.pressed]}>
             <SymbolView
               name={{ ios: 'photo', android: 'photo_library', web: 'photo_library' }}
-              tintColor="#FFFFFF"
+              tintColor="#5DAC2C"
               size={20}
             />
             <Text style={styles.uploadText}>Upload photo</Text>
@@ -157,17 +164,21 @@ export default function CropCamera({ onBack, onPhotoSelected }: CropCameraProps)
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#142019',
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 18,
     paddingTop: 10,
     paddingBottom: 16,
   },
   header: {
-    minHeight: 62,
+    minHeight: 66,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    paddingBottom: 10,
+    gap: 10,
+    paddingBottom: 12,
+  },
+  logo: {
+    width: 66,
+    height: 42,
   },
   backButton: {
     width: 40,
@@ -175,20 +186,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 20,
-    backgroundColor: '#26382B',
+    backgroundColor: '#EFF4EB',
   },
   headerCopy: {
     flex: 1,
   },
   eyebrow: {
-    color: '#B6D59D',
+    color: '#66736A',
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1,
   },
   title: {
-    color: '#FFFFFF',
-    fontSize: 18,
+    color: '#1D2B23',
+    fontSize: 15,
     fontWeight: '800',
     marginTop: 3,
   },
@@ -250,7 +261,7 @@ const styles = StyleSheet.create({
     paddingTop: 15,
   },
   hint: {
-    color: '#D7E0D9',
+    color: '#66736A',
     fontSize: 13,
     lineHeight: 18,
     textAlign: 'center',
@@ -271,11 +282,11 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 10,
     borderWidth: 1,
-    borderColor: '#738579',
+    borderColor: '#5DAC2C',
     borderRadius: 9,
   },
   uploadText: {
-    color: '#FFFFFF',
+    color: '#1D2B23',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -285,7 +296,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
-    borderColor: '#FFFFFF',
+    borderColor: '#1D2B23',
     borderRadius: 33,
   },
   shutterInner: {
@@ -304,7 +315,7 @@ const styles = StyleSheet.create({
     opacity: 0.78,
   },
   message: {
-    color: '#F0BF8C',
+    color: '#A33F32',
     fontSize: 12,
     lineHeight: 17,
     textAlign: 'center',

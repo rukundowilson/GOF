@@ -117,7 +117,12 @@ export default function CropPhotoReview({ photoUri, onRetake, onDone, onDiagnosi
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text style={styles.brand}>GOF<Text style={styles.brandPlus}>+</Text></Text>
+            <Image
+              source={require('../../assets/images/logo/gof logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+              accessibilityLabel="GOF+ logo"
+            />
             <Text style={styles.step}>CROP DIAGNOSIS</Text>
           </View>
 
@@ -256,13 +261,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 32,
   },
-  brand: {
-    color: ink,
-    fontSize: 19,
-    fontWeight: '900',
-  },
-  brandPlus: {
-    color: accent,
+  logo: {
+    width: 96,
+    height: 38,
   },
   step: {
     color: muted,

@@ -19,24 +19,22 @@ const colors = {
 
 const benefits = [
   {
-    title: 'Diagnose crop emergencies',
-    description: 'Find the cause and prescribe targeted, affordable treatment.',
+    title: 'Crop diagnosis',
+    description: 'Upload or take a crop photo to check for visible pests, disease, or stress and get treatment guidance.',
+    image: require('../../assets/images/cam scan.webp'),
+    imageLabel: 'Illustration of a plant ready to scan',
   },
   {
-    title: 'Plan soil and fertilizer',
-    description: 'Use soil tests to choose the right fertilizer.',
+    title: 'Seed selection',
+    description: 'Use lab soil results, your location, and local weather to find seed options suited to field conditions.',
+    image: require('../../assets/images/seeds.jpg'),
+    imageLabel: 'Seeds ready for planting',
   },
   {
-    title: 'Choose seeds and planting times',
-    description: 'Choose seeds for local weather and soil.',
-  },
-  {
-    title: 'Modernize farming',
-    description: 'Use drones, GPS, and smart irrigation.',
-  },
-  {
-    title: 'Adapt to climate change',
-    description: 'Change planting times and choose drought-ready crops.',
+    title: 'National programs',
+    description: 'Explore trusted government programs, what they offer, and how farmers can access support.',
+    image: require('../../assets/images/people-national programs.png'),
+    imageLabel: 'People representing national programs',
   },
 ];
 
@@ -125,14 +123,12 @@ export default function HomeScreen() {
             accessibilityLabel="GOF logo"
           />
 
-          <Text style={styles.title}>Your AI Agronomist</Text>
+          <Text style={styles.title}>AI Agriconsultant</Text>
 
           <View style={styles.benefits}>
-            {benefits.map((benefit, index) => (
+            {benefits.map((benefit) => (
               <View key={benefit.title} style={styles.benefitRow}>
-                <View style={styles.benefitNumber}>
-                  <Text style={styles.benefitNumberText}>0{index + 1}</Text>
-                </View>
+                <Image source={benefit.image} style={styles.benefitImage} resizeMode="cover" accessibilityLabel={benefit.imageLabel} />
                 <View style={styles.benefitTextWrap}>
                   <Text style={styles.benefitTitle}>{benefit.title}</Text>
                   <Text style={styles.benefitDescription}>{benefit.description}</Text>
@@ -222,32 +218,25 @@ const styles = StyleSheet.create({
   },
   benefits: {
     width: '100%',
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: colors.line,
-    marginTop: 30,
+    marginTop: 24,
     marginBottom: 26,
-    paddingVertical: 8,
   },
   benefitRow: {
-    minHeight: 68,
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    paddingVertical: 9,
-  },
-  benefitNumber: {
-    width: 30,
-    height: 30,
     alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 15,
-    backgroundColor: '#E2EBDD',
+    gap: 12,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 12,
   },
-  benefitNumberText: {
-    color: colors.forest,
-    fontSize: 10,
-    fontWeight: '800',
+  benefitImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 12,
+    backgroundColor: '#EAF4E6',
   },
   benefitTextWrap: {
     flex: 1,

@@ -10,6 +10,7 @@ import {
 import { SymbolView } from 'expo-symbols';
 import { useCallback, useEffect, useState } from 'react';
 import {
+    Linking,
     Platform,
     Image,
     Pressable,
@@ -30,9 +31,8 @@ type Service = {
   title: string;
   description: string;
   ready: boolean;
-  icon: { ios: string; android: string; web: string };
-  iconColor: string;
-  iconBackground: string;
+  image: number;
+  imageLabel: string;
 };
 
 type ServiceSelectionProps = {
@@ -44,31 +44,51 @@ const services = [
   {
     id: 'diagnosis',
     title: 'Crop diagnosis',
-    description: 'Check crop problems from a photo.',
+    description: 'Upload a crop photo to check for pests, disease, or stress and review treatment guidance.',
     ready: true,
-    icon: { ios: 'leaf.fill', android: 'agriculture', web: 'agriculture' },
-    iconColor: '#26844A',
-    iconBackground: '#E8F5EC',
+    image: require('../../assets/images/cam scan.webp'),
+    imageLabel: 'Illustration of a plant ready to scan',
   },
   {
     id: 'seed-recommendation',
-    title: 'Seed selection and planning',
-    description: 'Use AI to match seed options to field conditions.',
+    title: 'Seed selection',
+    description: "Use lab results, location, district altitude, and forecast to compare registered Rwanda seed varieties.",
     ready: true,
-    icon: { ios: 'leaf.arrow.circlepath', android: 'grass', web: 'grass' },
-    iconColor: '#438856',
-    iconBackground: '#EDF6E9',
+    image: require('../../assets/images/seeds.jpg'),
+    imageLabel: 'Seeds ready for planting',
   },
   {
-    id: 'agronomists',
-    title: 'Agronomists',
-    description: 'Connect with nearby crop experts.',
-    ready: false,
-    icon: { ios: 'person.2.fill', android: 'support_agent', web: 'support_agent' },
-    iconColor: '#277C85',
-    iconBackground: '#E8F5F5',
+    id: 'national-programs',
+    title: 'National programs',
+    description: 'Browse trusted government programs, see what farmer support they offer, and find where to learn more.',
+    ready: true,
+    image: require('../../assets/images/people-national programs.png'),
+    imageLabel: 'People representing national programs',
   },
 ] as const satisfies Service[];
+
+const nationalPrograms = [
+  {
+    title: 'smart nkunganire',
+    description: 'enables farmers to submit an application for subsidized agro-inputs',
+    url: 'https://www.minagri.gov.rw/updates/news-details/smart-nkunganire-system-to-enhance-access-to-agriculture-inputs',
+  },
+  {
+    title: 'Smart Kungahara System',
+    description: 'a digital record-keeping and payment system for coffee, tea, and other cash-crop farmers',
+    url: 'https://smartkungahara.rw/',
+  },
+  {
+    title: 'Tekana Urishingiwe',
+    description: 'a government initiative providing farmers with financial protection against the risks associated with agriculture',
+    url: 'https://www.minagri.gov.rw/updates/news-details/minagri-and-rab-spiu-encourage-farmers-to-embrace-the-national-agriculture-insurance-scheme-nais',
+  },
+  {
+    title: 'Twigire Muhinzi',
+    description: 'a farmer-centered extension program that brings agricultural advice and training closer to farmers',
+    url: 'https://www.rab.gov.rw/agriculture-development/crop-innovation-tech-transfer',
+  },
+] as const;
 
 export default function ServiceSelection({ onBack, location }: ServiceSelectionProps) {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
@@ -78,6 +98,8 @@ export default function ServiceSelection({ onBack, location }: ServiceSelectionP
   const [showPhotoReview, setShowPhotoReview] = useState(false);
   const [showDiagnosisHome, setShowDiagnosisHome] = useState(false);
   const [showSeedRecommendation, setShowSeedRecommendation] = useState(false);
+  const [showNationalPrograms, setShowNationalPrograms] = useState(false);
+  const [selectedProgram, setSelectedProgram] = useState<(typeof nationalPrograms)[number] | null>(null);
   const [records, setRecords] = useState<DiagnosisRecord[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<DiagnosisRecord | null>(null);
 
@@ -116,6 +138,167 @@ export default function ServiceSelection({ onBack, location }: ServiceSelectionP
         location={location}
         onBack={() => setShowSeedRecommendation(false)}
       />
+    );
+  }
+
+  if (showNationalPrograms) {
+    return (
+      <SafeAreaView style={styles.screen}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.content}>
+            <View style={styles.header}>
+              <Image source={require('../../assets/images/logo/gof logo.png')} style={styles.logo} resizeMode="contain" accessibilityLabel="GOF+ logo" />
+              <LocationPill location={location} />
+            </View>
+            {selectedProgram ? (selectedProgram === nationalPrograms[0] ? (
+              <>
+                <Text style={styles.smartTitle}>smart nkunganire</Text>
+                <Text style={styles.smartIntro}>SNS lets farmers register and apply for subsidized agro-inputs on time using the *774# USSD code.</Text>
+                <Pressable
+                  accessibilityRole="link"
+                  onPress={() => { void Linking.openURL('https://smartnkunganire.rw/#how-it-works').catch(() => setMessage('Could not open the Smart Nkunganire website.')); }}
+                  style={({ pressed }) => [styles.smartWebsiteLink, pressed && styles.cardPressed]}>
+                  <Text style={styles.smartWebsiteText}>https://smartnkunganire.rw/#how-it-works</Text>
+                </Pressable>
+                <View style={styles.smartActions}>
+                  <Pressable
+                    accessibilityRole="link"
+                    onPress={() => { void Linking.openURL('https://smartnkunganire.rw/').catch(() => setMessage('Could not open the Smart Nkunganire website.')); }}
+                    style={({ pressed }) => [styles.smartActionButton, pressed && styles.cardPressed]}>
+                    <Text style={styles.smartActionText}>Order online</Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="link"
+                    onPress={() => { void Linking.openURL('tel:*774%23').catch(() => setMessage('Dial *774# from your mobile phone to continue.')); }}
+                    style={({ pressed }) => [styles.smartActionButton, styles.smartUssdButton, pressed && styles.cardPressed]}>
+                    <Text style={styles.smartActionText}>Dial *774#</Text>
+                  </Pressable>
+                </View>
+                <View style={styles.smartHowItWorks}>
+                  <Text style={styles.smartHowTitle}>how it works</Text>
+                  <View style={styles.kungaharaSteps}>
+                    <View style={styles.kungaharaStep}>
+                      <Text style={styles.kungaharaBullet}>{'\u2022'}</Text>
+                      <View style={styles.kungaharaStepCopy}>
+                        <Text style={styles.kungaharaStepTitle}>Agro-input supply</Text>
+                        <Text style={styles.kungaharaStepDescription}>Suppliers sell to agro-dealers, who provide inputs to farmers.</Text>
+                      </View>
+                    </View>
+                    <View style={styles.kungaharaStep}>
+                      <Text style={styles.kungaharaBullet}>{'\u2022'}</Text>
+                      <View style={styles.kungaharaStepCopy}>
+                        <Text style={styles.kungaharaStepTitle}>Connected warehouses</Text>
+                        <Text style={styles.kungaharaStepDescription}>Warehouses link digitally with agro-dealers to share stock availability countrywide.</Text>
+                      </View>
+                    </View>
+                    <View style={styles.kungaharaStep}>
+                      <Text style={styles.kungaharaBullet}>{'\u2022'}</Text>
+                      <View style={styles.kungaharaStepCopy}>
+                        <Text style={styles.kungaharaStepTitle}>Ordering and delivery</Text>
+                        <Text style={styles.kungaharaStepDescription}>Agro-dealers order supplies and receive deliveries at registered shops.</Text>
+                      </View>
+                    </View>
+                    <View style={styles.kungaharaStep}>
+                      <Text style={styles.kungaharaBullet}>{'\u2022'}</Text>
+                      <View style={styles.kungaharaStepCopy}>
+                        <Text style={styles.kungaharaStepTitle}>Digital sales</Text>
+                        <Text style={styles.kungaharaStepDescription}>Agro-dealers manage inventory and sell inputs to farmers.</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              </>
+            ) : (
+              <>
+                <Text style={styles.smartTitle}>smart kungahara system</Text>
+                <Text style={styles.smartIntro}>A digital notebook and payment tool for coffee, tea, and other crops. It helps farmers get recognized, access fertilizers, track harvests from farm to washing station, and receive secure payments on their phones.{'\n'}get service on USSD *774*2#</Text>
+                <View style={[styles.smartActions, styles.kungaharaActions]}>
+                  <Pressable
+                    accessibilityRole="link"
+                    onPress={() => { void Linking.openURL('tel:*774*2%23').catch(() => setMessage('Dial *774*2# from your mobile phone to continue.')); }}
+                    style={({ pressed }) => [styles.smartActionButton, styles.smartUssdButton, pressed && styles.cardPressed]}>
+                    <Text style={styles.smartActionText}>Dial *774*2#</Text>
+                  </Pressable>
+                </View>
+                <View style={[styles.smartHowItWorks, styles.kungaharaHowItWorks]}>
+                  <Text style={styles.smartHowTitle}>how it works</Text>
+                  <View style={styles.kungaharaSteps}>
+                    <View style={styles.kungaharaStep}>
+                      <Text style={styles.kungaharaBullet}>•</Text>
+                      <View style={styles.kungaharaStepCopy}>
+                        <Text style={styles.kungaharaStepTitle}>Register Your Farm</Text>
+                        <Text style={styles.kungaharaStepDescription}>Sign up with your National ID and Mobile Money number at your cooperative to get your unique Farmer ID.</Text>
+                      </View>
+                    </View>
+                    <View style={styles.kungaharaStep}>
+                      <Text style={styles.kungaharaBullet}>•</Text>
+                      <View style={styles.kungaharaStepCopy}>
+                        <Text style={styles.kungaharaStepTitle}>Collect Inputs</Text>
+                        <Text style={styles.kungaharaStepDescription}>Use your digital ID to claim the fertilizers and tools allocated for your farm size.</Text>
+                      </View>
+                    </View>
+                    <View style={styles.kungaharaStep}>
+                      <Text style={styles.kungaharaBullet}>•</Text>
+                      <View style={styles.kungaharaStepCopy}>
+                        <Text style={styles.kungaharaStepTitle}>Log Your Harvest</Text>
+                        <Text style={styles.kungaharaStepDescription}>Deliver crops to the washing station, where your weight is digitally recorded and confirmed by SMS.</Text>
+                      </View>
+                    </View>
+                    <View style={styles.kungaharaStep}>
+                      <Text style={styles.kungaharaBullet}>•</Text>
+                      <View style={styles.kungaharaStepCopy}>
+                        <Text style={styles.kungaharaStepTitle}>Get Paid Digitally</Text>
+                        <Text style={styles.kungaharaStepDescription}>Receive secure, direct payments into your Mobile Money account with a permanent digital record of your sales.</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              </>
+            )) : (
+              <>
+                <Text style={styles.programsHeading}>national programs for you</Text>
+                <Text style={styles.programsIntro}>services below are services brought and trusted by government to help a farmer be more productive</Text>
+                {nationalPrograms.map((program) => (
+                  <Pressable
+                    key={program.title}
+                    accessibilityRole={program === nationalPrograms[0] || program === nationalPrograms[1] ? 'button' : 'link'}
+                    onPress={() => {
+                      if (program === nationalPrograms[0] || program === nationalPrograms[1]) {
+                        setSelectedProgram(program);
+                        setMessage('');
+                        return;
+                      }
+                      void Linking.openURL(program.url).catch(() => setMessage('Could not open this program page. Please try again.'));
+                    }}
+                    style={({ pressed }) => [styles.programCard, pressed && styles.cardPressed]}>
+                    <View style={styles.programCopy}>
+                      <Text style={styles.programTitle}>{program.title}</Text>
+                      <Text style={styles.programDescription}>{program.description}</Text>
+                      <Text style={styles.programLink}>learn more →</Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </>
+            )}
+            {message ? <Text style={styles.message}>{message}</Text> : null}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={selectedProgram ? 'Back to national programs' : 'Back to services'}
+              onPress={() => {
+                if (selectedProgram) {
+                  setSelectedProgram(null);
+                } else {
+                  setShowNationalPrograms(false);
+                }
+                setMessage('');
+              }}
+              style={({ pressed }) => [styles.backLink, pressed && styles.cardPressed]}>
+              <SymbolView name={{ ios: 'arrow.left', android: 'arrow_back', web: 'arrow_back' }} tintColor={accent} size={17} />
+              <Text style={styles.backLinkText}>Back</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
@@ -215,6 +398,10 @@ export default function ServiceSelection({ onBack, location }: ServiceSelectionP
       setShowSeedRecommendation(true);
       return;
     }
+    if (selectedService.id === 'national-programs') {
+      setShowNationalPrograms(true);
+      return;
+    }
     setShowDiagnosisHome(true);
   }
 
@@ -250,9 +437,7 @@ export default function ServiceSelection({ onBack, location }: ServiceSelectionP
                     pressed && styles.cardPressed,
                   ]}>
                   <View style={styles.cardTop}>
-                    <View style={[styles.iconWrap, { backgroundColor: service.iconBackground }]}>
-                      <SymbolView name={service.icon} tintColor={service.iconColor} size={23} />
-                    </View>
+                    <Image source={service.image} style={styles.serviceImage} resizeMode="cover" accessibilityLabel={service.imageLabel} />
                     <View style={[styles.selectionMark, isSelected && styles.selectedMark]}>
                       {isSelected ? <Text style={styles.checkmark}>✓</Text> : null}
                     </View>
@@ -450,6 +635,31 @@ const styles = StyleSheet.create({
     marginTop: 5,
     marginBottom: 20,
   },
+  programsHeading: { color: accent, fontSize: 23, lineHeight: 30, fontWeight: '800', textAlign: 'center', marginBottom: 18 },
+  programsIntro: { color: ink, fontSize: 13, lineHeight: 19, textAlign: 'center', marginHorizontal: 8, marginBottom: 28 },
+  programCard: { width: '82%', alignSelf: 'center', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#BEBEBE', borderRadius: 12, paddingHorizontal: 15, paddingVertical: 12, marginBottom: 14, minHeight: 108 },
+  programCopy: { alignItems: 'center', gap: 4 },
+  programTitle: { color: accent, fontSize: 17, lineHeight: 22, fontWeight: '800', textAlign: 'center' },
+  programDescription: { color: '#292929', fontSize: 13, lineHeight: 17, textAlign: 'center' },
+  programLink: { color: '#2674D9', fontSize: 13, lineHeight: 18, fontWeight: '400', textAlign: 'center', marginTop: 2 },
+  smartTitle: { color: accent, fontSize: 24, lineHeight: 31, fontWeight: '800', textAlign: 'center', marginTop: 17, marginBottom: 18 },
+  smartIntro: { color: ink, fontSize: 15, lineHeight: 20, fontWeight: '400', textAlign: 'center', marginHorizontal: 9 },
+  smartWebsiteLink: { alignSelf: 'center', marginTop: 19, marginBottom: 10, paddingVertical: 3, paddingHorizontal: 6 },
+  smartWebsiteText: { color: '#2674D9', fontSize: 14, lineHeight: 20, fontWeight: '400', textAlign: 'center', textDecorationLine: 'none' },
+  smartActions: { alignItems: 'center', gap: 12, marginTop: 1 },
+  smartActionButton: { width: '52%', minHeight: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 22, backgroundColor: '#55AD2E', paddingHorizontal: 12 },
+  smartUssdButton: { backgroundColor: '#72B94D' },
+  smartActionText: { color: '#FFFFFF', fontSize: 14, lineHeight: 19, textAlign: 'center' },
+  smartHowItWorks: { width: '82%', alignSelf: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#BEBEBE', borderRadius: 12, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 18, marginTop: 32, marginBottom: 8 },
+  smartHowTitle: { color: accent, fontSize: 20, lineHeight: 27, fontWeight: '800', textAlign: 'center', marginBottom: 18 },
+  kungaharaActions: { marginTop: 24 },
+  kungaharaHowItWorks: { marginTop: 28, paddingHorizontal: 24, paddingTop: 23 },
+  kungaharaSteps: { gap: 8 },
+  kungaharaStep: { flexDirection: 'row', alignItems: 'flex-start', gap: 7 },
+  kungaharaBullet: { width: 10, color: ink, fontSize: 13, lineHeight: 16 },
+  kungaharaStepCopy: { flex: 1 },
+  kungaharaStepTitle: { color: ink, fontSize: 12, lineHeight: 15, fontWeight: '700' },
+  kungaharaStepDescription: { color: ink, fontSize: 12, lineHeight: 15, marginLeft: 9 },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -458,8 +668,8 @@ const styles = StyleSheet.create({
   },
   serviceCard: {
     width: '48.5%',
-    minHeight: 166,
-    padding: 13,
+    minHeight: 190,
+    padding: 10,
     borderWidth: 1,
     borderColor: '#E3EAE2',
     borderRadius: 12,
@@ -476,14 +686,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 11,
+    marginBottom: 8,
   },
-  iconWrap: {
-    width: 38,
-    height: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
+  serviceImage: {
+    width: 48,
+    height: 48,
     borderRadius: 11,
+    backgroundColor: '#EAF4E6',
   },
   selectionMark: {
     width: 20,

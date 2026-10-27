@@ -54,7 +54,7 @@ export default function SoilLocationMap({ coordinates, onLocate, onSelectLocatio
 }
 
 const styles = StyleSheet.create({
-  map: { width: '100%', height: 190, backgroundColor: '#E8F1EB', overflow: 'hidden' },
+  map: { width: '100%', height: 120, backgroundColor: '#E8F1EB', overflow: 'hidden' },
   webview: { flex: 1, backgroundColor: '#E8F1EB' },
   emptyMap: { alignItems: 'center', justifyContent: 'center', gap: 8, padding: 14 },
   emptyText: { color: '#66736A', fontSize: 12, textAlign: 'center' },

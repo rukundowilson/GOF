@@ -56,7 +56,7 @@ function arrayBufferToBase64(arrayBuffer: ArrayBuffer) {
 export async function POST(request: Request) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return errorResponse('Gemini is not configured. Add GEMINI_API_KEY to the server environment and restart Expo.', 503);
+    return errorResponse('The crop analysis service is not configured. Please try again later.', 503);
   }
 
   let submittedImage: FormDataEntryValue | null;
@@ -159,22 +159,22 @@ export async function POST(request: Request) {
     }
     if (!result) {
       if (lastError) throw lastError;
-      return errorResponse('Gemini did not return a response. Please try again.', 502);
+      return errorResponse('No crop analysis was returned. Please try again.', 502);
     }
 
     const generatedText = result.text;
     if (!generatedText) {
-      return errorResponse('Gemini did not return an analysis. Try a clearer crop photo.', 502);
+      return errorResponse('No crop analysis was returned. Try a clearer crop photo.', 502);
     }
 
     let diagnosis: unknown;
     try {
       diagnosis = JSON.parse(generatedText);
     } catch {
-      return errorResponse('Gemini returned an unreadable analysis. Please try again.', 502);
+      return errorResponse('The crop analysis could not be read. Please try again.', 502);
     }
     if (!isGeminiDiagnosis(diagnosis)) {
-      return errorResponse('Gemini returned an incomplete analysis. Please try again.', 502);
+      return errorResponse('The crop analysis was incomplete. Please try again.', 502);
     }
 
     return Response.json(diagnosis);
@@ -182,16 +182,16 @@ export async function POST(request: Request) {
     console.error('[crop-analysis] Gemini request failed', error);
     const status = getHttpStatus(error);
     if (status === 401 || status === 403) {
-      return errorResponse('Google rejected the Gemini API key. Check GEMINI_API_KEY and its API access.', 502);
+      return errorResponse('The crop analysis service could not authenticate. Please contact support.', 502);
     }
     if (status === 429) {
-      return errorResponse('Gemini is temporarily rate limited. Please try again shortly.', 429);
+      return errorResponse('The crop analysis service is busy. Please try again shortly.', 429);
     }
     if (status === 503) {
-      return errorResponse('Gemini is experiencing high demand. Please try again shortly.', 503);
+      return errorResponse('The crop analysis service is temporarily unavailable. Please try again shortly.', 503);
     }
     return errorResponse(
-      'Could not connect to Gemini after several attempts. Check the server’s internet connection, DNS, or firewall, then try again.',
+      'Could not reach the crop analysis service after several attempts. Please try again shortly.',
       502,
     );
   }

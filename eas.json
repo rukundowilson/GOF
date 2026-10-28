@@ -1,5 +1,8 @@
 {
   "build": {
+    "production": {
+      "extends": "preview"
+    },
     "preview": {
       "distribution": "internal",
       "android": {

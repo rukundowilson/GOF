@@ -1,5 +1,7 @@
 # GOF+ — practical farming support in one place
 
+**[▶ Watch the GOF+ demo video](https://www.youtube.com/shorts/Nig3wrQi2YM)**
+
 GOF+ is a mobile-first farming companion built to help farmers find useful guidance and services without having to search across many different places. It brings crop support, planning tools, and links to national agriculture programs into one simple experience.
 
 The app is designed for farmers who need clear next steps: understand what may be affecting a crop, make better informed choices before planting, and find the right channel for existing support programs.

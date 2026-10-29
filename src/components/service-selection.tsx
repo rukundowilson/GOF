@@ -54,7 +54,7 @@ const services = [
     title: 'Pre-Season Analysis',
     description: 'Review soil laboratory results alongside your location and local weather to support crop and seed decisions before planting.',
     ready: true,
-    image: require('../../assets/images/seeds.jpg'),
+    image: require('../../assets/images/seeds.png'),
     imageLabel: 'Seeds ready for planting',
   },
   {
@@ -165,13 +165,13 @@ export default function ServiceSelection({ onBack, location }: ServiceSelectionP
                     accessibilityRole="link"
                     onPress={() => { void Linking.openURL('https://smartnkunganire.rw/').catch(() => setMessage('Could not open the Smart Nkunganire website.')); }}
                     style={({ pressed }) => [styles.smartActionButton, pressed && styles.cardPressed]}>
-                    <Text style={styles.smartActionText}>order(web)</Text>
+                    <Text style={styles.smartActionText}>Web</Text>
                   </Pressable>
                   <Pressable
                     accessibilityRole="link"
                     onPress={() => { void Linking.openURL('tel:*774%23').catch(() => setMessage('Dial *774# from your mobile phone to continue.')); }}
                     style={({ pressed }) => [styles.smartActionButton, styles.smartUssdButton, pressed && styles.cardPressed]}>
-                    <Text style={styles.smartActionText}>order(ussd)</Text>
+                    <Text style={styles.smartActionText}>Dial (USSD)</Text>
                   </Pressable>
                 </View>
                 <View style={styles.smartHowItWorks}>
@@ -217,7 +217,7 @@ export default function ServiceSelection({ onBack, location }: ServiceSelectionP
                     accessibilityRole="link"
                     onPress={() => { void Linking.openURL('tel:*774*2%23').catch(() => setMessage('Dial *774*2# from your mobile phone to continue.')); }}
                     style={({ pressed }) => [styles.smartActionButton, styles.smartUssdButton, pressed && styles.cardPressed]}>
-                    <Text style={styles.smartActionText}>order(ussd)</Text>
+                    <Text style={styles.smartActionText}>Dial (USSD)</Text>
                   </Pressable>
                 </View>
                 <View style={[styles.smartHowItWorks, styles.kungaharaHowItWorks]}>
@@ -437,7 +437,7 @@ export default function ServiceSelection({ onBack, location }: ServiceSelectionP
                     pressed && styles.cardPressed,
                   ]}>
                   <View style={styles.cardTop}>
-                    <Image source={service.image} style={styles.serviceImage} resizeMode="cover" accessibilityLabel={service.imageLabel} />
+                    <Image source={service.image} style={styles.serviceImage} resizeMode="contain" accessibilityLabel={service.imageLabel} />
                     <View style={[styles.selectionMark, isSelected && styles.selectedMark]}>
                       {isSelected ? <Text style={styles.checkmark}>✓</Text> : null}
                     </View>
@@ -691,6 +691,7 @@ const styles = StyleSheet.create({
   serviceImage: {
     width: 48,
     height: 48,
+    flexShrink: 0,
     borderRadius: 11,
     backgroundColor: '#EAF4E6',
   },

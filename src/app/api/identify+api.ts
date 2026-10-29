@@ -1,6 +1,7 @@
 import { GoogleGenAI, ThinkingLevel } from '@google/genai';
 
 const MAX_IMAGE_SIZE_BYTES = 14 * 1024 * 1024;
+const GEMINI_REQUEST_TIMEOUT_MS = 180_000;
 const acceptedImageTypes = new Set(['image/jpeg', 'image/png']);
 const model = 'gemini-3.8-flash';
 const fallbackModel = 'gemini-3.6-flash';
@@ -54,7 +55,7 @@ function arrayBufferToBase64(arrayBuffer: ArrayBuffer) {
 }
 
 export async function POST(request: Request) {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY?.trim() ?? '';
   if (!apiKey) {
     return errorResponse('The crop analysis service is not configured. Please try again later.', 503);
   }
@@ -127,11 +128,11 @@ export async function POST(request: Request) {
     const ai = new GoogleGenAI({
       apiKey,
       httpOptions: {
-        timeout: 75_000,
-        retryOptions: { attempts: 3, initialDelay: 1, maxDelay: 5, jitter: 1 },
+        timeout: GEMINI_REQUEST_TIMEOUT_MS,
+        retryOptions: { attempts: 1 },
         fetch: (input, init) => fetch(input, {
           ...init,
-          connectTimeout: 75_000,
+          connectTimeout: GEMINI_REQUEST_TIMEOUT_MS,
         } as RequestInit & { connectTimeout: number }),
       },
     });

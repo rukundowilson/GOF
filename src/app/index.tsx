@@ -27,7 +27,7 @@ const benefits = [
   {
     title: 'Pre-Season Analysis',
     description: 'Combine soil laboratory results, your location, and local weather to guide crop and seed choices before planting.',
-    image: require('../../assets/images/seeds.jpg'),
+    image: require('../../assets/images/seeds.png'),
     imageLabel: 'Seeds ready for planting',
   },
   {
@@ -118,7 +118,7 @@ export default function HomeScreen() {
           <View style={styles.benefits}>
             {benefits.map((benefit) => (
               <View key={benefit.title} style={styles.benefitRow}>
-                <Image source={benefit.image} style={styles.benefitImage} resizeMode="cover" accessibilityLabel={benefit.imageLabel} />
+                <Image source={benefit.image} style={styles.benefitImage} resizeMode="contain" accessibilityLabel={benefit.imageLabel} />
                 <View style={styles.benefitTextWrap}>
                   <Text style={styles.benefitTitle}>{benefit.title}</Text>
                   <Text style={styles.benefitDescription}>{benefit.description}</Text>
@@ -222,6 +222,7 @@ const styles = StyleSheet.create({
   benefitImage: {
     width: 56,
     height: 56,
+    flexShrink: 0,
     borderRadius: 10,
     backgroundColor: '#EAF4E6',
     opacity: 0.78,

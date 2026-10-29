@@ -128,7 +128,7 @@ function getHttpStatus(error: unknown) {
 }
 
 export async function POST(request: Request) {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY?.trim() ?? '';
   if (!apiKey) return errorResponse('The pre-season analysis service is not configured. Please try again later.', 503);
 
   let form: { get: (name: string) => FormDataEntryValue | null };

@@ -35,6 +35,10 @@
       .notice p { margin: 0 0 32px; color: var(--muted); line-height: 1.55; }
       .notice-actions { display: flex; flex-wrap: wrap; gap: 10px; }
       .notice-actions .button { flex: 1 1 150px; }
+      .qr-notice { text-align: center; }
+      .qr-notice p { margin-bottom: 18px; }
+      .download-qr-image { display: block; width: min(100%, 280px); height: auto; margin: 0 auto 18px; border: 1px solid #e6e9e3; border-radius: 12px; }
+      .qr-close { border: 0; cursor: pointer; font-family: inherit; }
       .showcase { position: relative; display: flex; align-items: center; justify-content: center; gap: clamp(12px, 2vw, 26px); min-height: 620px; margin: 0 8px; padding: 18px 10px 10px; overflow: hidden; background: linear-gradient(130deg, #edf1e5, #e4ecd9 48%, #f1eee0); }
       .showcase::before, .showcase::after { position: absolute; width: 420px; height: 420px; border-radius: 50%; background: #ffffff40; content: ""; }
       .showcase::before { left: -220px; top: 80px; }
@@ -90,14 +94,14 @@
           <a href="#resources">resources</a>
           <a href="#faqs">FAQs</a>
         </nav>
-        <a class="button top-download" href="share-assets/gof-installer.apk" download="GOF-Android.apk">Download app</a>
+        <a class="button top-download" href="share-assets/gof-installer.apk" download="GOF-Android.apk" data-download-link>Download app</a>
       </header>
 
       <main id="top">
         <section class="intro" aria-label="About GOF+">
           <p>GOF+ is an AI farming assistant that helps farmers identify crop problems, plan for the season, and find trusted agricultural programs.</p>
           <div class="intro-actions">
-            <a class="button" href="share-assets/gof-installer.apk" download="GOF-Android.apk">Download app</a>
+            <a class="button" href="share-assets/gof-installer.apk" download="GOF-Android.apk" data-download-link>Download app</a>
             <a class="button button-secondary" href="https://gof--z6786xck32.expo.app/" target="_blank" rel="noopener noreferrer" data-web-link>Use web version</a>
           </div>
         </section>
@@ -133,15 +137,39 @@
         <h2 id="notice-title">A quick note</h2>
         <p id="notice-description">The web version may have limited performance. Download the app for the best experience.</p>
         <div class="notice-actions">
-          <a class="button" href="share-assets/gof-installer.apk" download="GOF-Android.apk">Download app</a>
+          <a class="button" href="share-assets/gof-installer.apk" download="GOF-Android.apk" data-download-link>Download app</a>
           <a class="button button-secondary" href="https://gof--z6786xck32.expo.app/" target="_blank" rel="noopener noreferrer" data-continue>Continue</a>
         </div>
       </section>
     </div>
+    <div class="notice-backdrop" id="download-qr" hidden>
+      <section class="notice qr-notice" role="dialog" aria-modal="true" aria-labelledby="download-qr-title" aria-describedby="download-qr-description">
+        <h2 id="download-qr-title">Scan to download GOF+</h2>
+        <p id="download-qr-description">Open your phone camera and scan this code. Tap the notification that appears to download the app.</p>
+        <img class="download-qr-image" src="share-assets/install-app-qr.png" alt="QR code to download the GOF+ Android app" />
+        <button class="button button-secondary qr-close" type="button" data-close-download>Close</button>
+      </section>
+    </div>
     <script>
       const notice = document.getElementById("web-notice");
+      const downloadQr = document.getElementById("download-qr");
       const webLink = document.querySelector("[data-web-link]");
       const continueLink = document.querySelector("[data-continue]");
+      const downloadLinks = document.querySelectorAll("[data-download-link]");
+      const closeDownload = document.querySelector("[data-close-download]");
+
+      downloadLinks.forEach((link) => {
+        link.addEventListener("click", (event) => {
+          event.preventDefault();
+          notice.hidden = true;
+          downloadQr.hidden = false;
+          closeDownload.focus();
+        });
+      });
+
+      closeDownload.addEventListener("click", () => {
+        downloadQr.hidden = true;
+      });
 
       webLink.addEventListener("click", (event) => {
         event.preventDefault();
@@ -153,8 +181,13 @@
         if (event.target === notice) notice.hidden = true;
       });
 
+      downloadQr.addEventListener("click", (event) => {
+        if (event.target === downloadQr) downloadQr.hidden = true;
+      });
+
       document.addEventListener("keydown", (event) => {
         if (event.key === "Escape" && !notice.hidden) notice.hidden = true;
+        if (event.key === "Escape" && !downloadQr.hidden) downloadQr.hidden = true;
       });
     </script>
   </body>

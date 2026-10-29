@@ -1,0 +1,242 @@
+[
+    {
+        "province":  "Kigali City",
+        "district":  "Nyarugenge",
+        "topography":  "Hilly terrain, steep urban slopes, flat valleys along Nyabarongo River",
+        "minAltitude":  1340,
+        "maxAltitude":  1850,
+        "avgAltitude":  1480
+    },
+    {
+        "province":  "Kigali City",
+        "district":  "Gasabo",
+        "topography":  "Rolling hills, high ridges (Mount Jali, Mount Kigali fringes), wide valleys",
+        "minAltitude":  1350,
+        "maxAltitude":  2000,
+        "avgAltitude":  1550
+    },
+    {
+        "province":  "Kigali City",
+        "district":  "Kicukiro",
+        "topography":  "Gently undulating hills, relatively flat plateaus, low wetland fringes",
+        "minAltitude":  1330,
+        "maxAltitude":  1600,
+        "avgAltitude":  1450
+    },
+    {
+        "province":  "Southern Province",
+        "district":  "Nyanza",
+        "topography":  "Central plateau landscape, modest rolling hills, wide agricultural valleys",
+        "minAltitude":  1400,
+        "maxAltitude":  1750,
+        "avgAltitude":  1600
+    },
+    {
+        "province":  "Southern Province",
+        "district":  "Gisagara",
+        "topography":  "Low rolling plateau hills, extensive valley marshes bordering Burundi",
+        "minAltitude":  1350,
+        "maxAltitude":  1650,
+        "avgAltitude":  1500
+    },
+    {
+        "province":  "Southern Province",
+        "district":  "Huye",
+        "topography":  "Undulating plateau hills rising toward western structural mountains",
+        "minAltitude":  1450,
+        "maxAltitude":  1900,
+        "avgAltitude":  1650
+    },
+    {
+        "province":  "Southern Province",
+        "district":  "Kamonyi",
+        "topography":  "Gently rolling landscape, dissected by the Nyabarongo river basin",
+        "minAltitude":  1350,
+        "maxAltitude":  1700,
+        "avgAltitude":  1500
+    },
+    {
+        "province":  "Southern Province",
+        "district":  "Ruhango",
+        "topography":  "Classic central plateau hills, deep technical valleys, moderate slopes",
+        "minAltitude":  1400,
+        "maxAltitude":  1800,
+        "avgAltitude":  1600
+    },
+    {
+        "province":  "Southern Province",
+        "district":  "Muhanga",
+        "topography":  "Rugged transitional terrain, steep hills bordering the western ridge",
+        "minAltitude":  1450,
+        "maxAltitude":  2100,
+        "avgAltitude":  1750
+    },
+    {
+        "province":  "Southern Province",
+        "district":  "Nyamagabe",
+        "topography":  "Highly mountainous, very steep slopes, heavily forested (Nyungwe NP)",
+        "minAltitude":  1600,
+        "maxAltitude":  2700,
+        "avgAltitude":  2100
+    },
+    {
+        "province":  "Southern Province",
+        "district":  "Nyaruguru",
+        "topography":  "High-altitude mountains, steep ridges, high rainfall catchment zones",
+        "minAltitude":  1550,
+        "maxAltitude":  2600,
+        "avgAltitude":  2000
+    },
+    {
+        "province":  "Western Province",
+        "district":  "Karongi",
+        "topography":  "Extremely rugged, Congo-Nile Crest peaks dropping steeply into Lake Kivu",
+        "minAltitude":  1460,
+        "maxAltitude":  2600,
+        "avgAltitude":  1900
+    },
+    {
+        "province":  "Western Province",
+        "district":  "Rutsiro",
+        "topography":  "High-altitude spine, very steep slopes, rugged terrain facing Kivu",
+        "minAltitude":  1460,
+        "maxAltitude":  2600,
+        "avgAltitude":  2100
+    },
+    {
+        "province":  "Western Province",
+        "district":  "Rubavu",
+        "topography":  "Volcanic foothills, lake shorelines, dynamic tectonic topography",
+        "minAltitude":  1460,
+        "maxAltitude":  2300,
+        "avgAltitude":  1700
+    },
+    {
+        "province":  "Western Province",
+        "district":  "Nyabihu",
+        "topography":  "High alpine volcanic highlands, steep mountain ridges, extreme cold/height",
+        "minAltitude":  1600,
+        "maxAltitude":  3000,
+        "avgAltitude":  2300
+    },
+    {
+        "province":  "Western Province",
+        "district":  "Ngororero",
+        "topography":  "Very rugged, steep high-altitude hills, prone to landslides, deep V-valleys",
+        "minAltitude":  1500,
+        "maxAltitude":  2400,
+        "avgAltitude":  1950
+    },
+    {
+        "province":  "Western Province",
+        "district":  "Nyamasheke",
+        "topography":  "Steep slopes bordering Lake Kivu, high altitude ridges, includes Nyungwe",
+        "minAltitude":  1460,
+        "maxAltitude":  2500,
+        "avgAltitude":  1800
+    },
+    {
+        "province":  "Western Province",
+        "district":  "Rusizi",
+        "topography":  "Kivu shores transitioning to low Bugarama plain (lowest in RW) \u0026 high ridges",
+        "minAltitude":  950,
+        "maxAltitude":  2300,
+        "avgAltitude":  1500
+    },
+    {
+        "province":  "Northern Province",
+        "district":  "Rulindo",
+        "topography":  "Steep precipitous hills, mineral-rich high ridges, narrow valleys",
+        "minAltitude":  1400,
+        "maxAltitude":  2200,
+        "avgAltitude":  1850
+    },
+    {
+        "province":  "Northern Province",
+        "district":  "Gakenke",
+        "topography":  "Highly fragmented relief, high mountains, steep slopes, complex network of valleys",
+        "minAltitude":  1450,
+        "maxAltitude":  2300,
+        "avgAltitude":  1880
+    },
+    {
+        "province":  "Northern Province",
+        "district":  "Musanze",
+        "topography":  "Volcanic plain surrounded by major Virunga peaks (Karisimbi, Bisoke)",
+        "minAltitude":  1700,
+        "maxAltitude":  4507,
+        "avgAltitude":  2100
+    },
+    {
+        "province":  "Northern Province",
+        "district":  "Burera",
+        "topography":  "High volcanic mountains, deep volcanic crater lakes (Burera \u0026 Ruhondo)",
+        "minAltitude":  1700,
+        "maxAltitude":  3700,
+        "avgAltitude":  2100
+    },
+    {
+        "province":  "Northern Province",
+        "district":  "Gicumbi",
+        "topography":  "High plateaus with very cold weather, steep technical ranges and ridges",
+        "minAltitude":  1600,
+        "maxAltitude":  2400,
+        "avgAltitude":  2000
+    },
+    {
+        "province":  "Eastern Province",
+        "district":  "Rwamagana",
+        "topography":  "Low rolling plateau hills, wide marshy valleys, lake zones (Muhazi)",
+        "minAltitude":  1350,
+        "maxAltitude":  1600,
+        "avgAltitude":  1450
+    },
+    {
+        "province":  "Eastern Province",
+        "district":  "Nyagatare",
+        "topography":  "Large flat plains, gentle low slopes, dry granite low hills",
+        "minAltitude":  1250,
+        "maxAltitude":  1500,
+        "avgAltitude":  1380
+    },
+    {
+        "province":  "Eastern Province",
+        "district":  "Gatsibo",
+        "topography":  "Low mountains transitioning east to flat savannas and Akagera plains",
+        "minAltitude":  1300,
+        "maxAltitude":  1700,
+        "avgAltitude":  1450
+    },
+    {
+        "province":  "Eastern Province",
+        "district":  "Kayonza",
+        "topography":  "Flattish savannah, lakes, low hills, eastern edge of Akagera National Park",
+        "minAltitude":  1250,
+        "maxAltitude":  1650,
+        "avgAltitude":  1400
+    },
+    {
+        "province":  "Eastern Province",
+        "district":  "Kirehe",
+        "topography":  "Low plateaus, gentle hills, prominent Rusumo falls river depression",
+        "minAltitude":  1200,
+        "maxAltitude":  1550,
+        "avgAltitude":  1350
+    },
+    {
+        "province":  "Eastern Province",
+        "district":  "Ngoma",
+        "topography":  "Low undulating hills, many shallow lakes and papyrus valley marshes",
+        "minAltitude":  1300,
+        "maxAltitude":  1600,
+        "avgAltitude":  1400
+    },
+    {
+        "province":  "Eastern Province",
+        "district":  "Bugesera",
+        "topography":  "Predominantly flat, low dry plateaus, surrounded by complex lake systems",
+        "minAltitude":  1300,
+        "maxAltitude":  1500,
+        "avgAltitude":  1350
+    }
+]
